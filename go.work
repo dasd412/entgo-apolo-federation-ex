@@ -1,0 +1,15 @@
+go 1.23
+
+toolchain go1.23.4
+
+use (
+	libs/config
+	libs/db
+	libs/ratelimit
+	libs/s3client
+	libs/scheduler
+	libs/validate
+	services/delivery
+	services/order
+	services/user
+)
