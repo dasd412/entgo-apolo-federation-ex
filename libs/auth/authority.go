@@ -3,11 +3,24 @@ package auth
 type Role int
 
 const (
-	_Role = 1 << iota
+	UNKNOWN = 1 << iota
 	Admin
 	Author
 	Guest
 )
+
+func ConvertRole(role string) Role {
+	switch role {
+	case "admin":
+		return Admin
+	case "author":
+		return Author
+	case "user":
+		return Guest
+	default:
+		return UNKNOWN
+	}
+}
 
 type Authority interface {
 	IsAdmin() bool

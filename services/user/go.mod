@@ -8,6 +8,7 @@ require (
 	entgo.io/contrib v0.6.0
 	entgo.io/ent v0.14.2
 	github.com/99designs/gqlgen v0.17.64
+	github.com/golang-jwt/jwt/v5 v5.2.1
 	github.com/hashicorp/go-multierror v1.1.1
 	github.com/vektah/gqlparser/v2 v2.5.22
 	golang.org/x/sync v0.11.0
