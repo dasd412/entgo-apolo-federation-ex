@@ -6,7 +6,7 @@ use (
 	libs/config
 	libs/db
 	libs/ratelimit
-	libs/s3client
+	./libs/s3client
 	libs/scheduler
 	libs/validate
 	services/delivery

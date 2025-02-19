@@ -1,4 +1,4 @@
-package croncore
+package scheduler
 
 import "github.com/robfig/cron/v3"
 

@@ -2,7 +2,8 @@ package ratelimit
 
 import (
 	"context"
-	"github.com/go-faster/errors"
+	"errors"
+	"fmt"
 	"github.com/redis/go-redis/v9"
 	"time"
 )
@@ -49,7 +50,7 @@ func (r *redisRateLimitRepository) GetRateLimitCount(
 			return 0, nil // 키가 존재하지 않으면 기본값 0 반환
 		}
 
-		return 0, errors.Wrapf(err, "레디스 키 조회 중 오류가 발생했습니다")
+		return 0, fmt.Errorf("레디스 키 조회 중 오류가 발생했습니다 : %w", err)
 	}
 
 	return rateLimitCount, nil
@@ -75,7 +76,7 @@ func (r *redisRateLimitRepository) IncrementRateLimitCount(
 	rateLimitCount, err = r.redisClient.Incr(ctx, key).Result()
 
 	if err != nil {
-		return errors.Wrapf(err, "레디스 키 증가 중 오류가 발생했습니다")
+		return fmt.Errorf("레디스 키 증가 중 오류가 발생했습니다 : %w", err)
 	}
 
 	if rateLimitCount == 1 { // 처음 increment한 경우, 만료 기한을 지정합니다.
@@ -83,7 +84,7 @@ func (r *redisRateLimitRepository) IncrementRateLimitCount(
 		err = r.redisClient.Expire(ctx, key, r.expiration).Err()
 
 		if err != nil {
-			return errors.Wrapf(err, "레디스 키 만료 설정 중 오류가 발생했습니다")
+			return fmt.Errorf("레디스 키 만료 설정 중 오류가 발생했습니다 : %w", err)
 		}
 	}
 
