@@ -2,12 +2,13 @@ go 1.23.4
 
 use (
 	./libs/auth
+	./libs/client
 	./libs/config
 	./libs/db
 	./libs/errorwrapper
 	./libs/ratelimit
-	./libs/s3client
 	./libs/scheduler
+	./libs/server
 	./libs/validate
 	services/delivery
 	services/order
