@@ -1,7 +1,7 @@
 type Mutation {
-
+    deleteDelivery(id: ID!): Boolean!
 }
 
 extend type Query {
-
+    delivery(id: ID!): Delivery!
 }

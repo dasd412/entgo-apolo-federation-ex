@@ -1,9 +1,9 @@
 package resolver
 
 import (
+	"delivery/pkg/ent"
+	"delivery/pkg/graph/gen"
 	"github.com/99designs/gqlgen/graphql"
-	"user/pkg/ent"
-	"user/pkg/graph/gen"
 )
 
 // This file will not be regenerated automatically.
@@ -15,7 +15,6 @@ type Resolver struct {
 }
 
 func NewSchema(entClient *ent.Client) graphql.ExecutableSchema {
-
 	return gen.NewExecutableSchema(
 		gen.Config{
 			Resolvers: &Resolver{

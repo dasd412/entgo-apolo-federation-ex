@@ -1,7 +1,7 @@
 type Mutation {
-
+    deleteOrder(id: ID!): Boolean!
 }
 
 extend type Query {
-
+    order(id: ID!): Order!
 }
