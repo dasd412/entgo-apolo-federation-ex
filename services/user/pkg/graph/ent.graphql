@@ -95,32 +95,6 @@ type Query {
     """
     ids: [ID!]!
   ): [Node]!
-  users(
-    """
-    Returns the elements in the list that come after the specified cursor.
-    """
-    after: Cursor
-
-    """
-    Returns the first _n_ elements from the list.
-    """
-    first: Int
-
-    """
-    Returns the elements in the list that come before the specified cursor.
-    """
-    before: Cursor
-
-    """
-    Returns the last _n_ elements from the list.
-    """
-    last: Int
-
-    """
-    Filtering options for Users returned from the connection.
-    """
-    where: UserWhereInput
-  ): UserConnection!
 }
 """
 The builtin Time type
@@ -148,7 +122,7 @@ input UpdateUserInput {
   """
   role: UserRole
 }
-type User implements Node {
+type User implements Node @key(fields: "id") {
   id: ID!
   """
   이메일

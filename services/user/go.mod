@@ -1,11 +1,9 @@
 module user
 
-go 1.23
-
-toolchain go1.23.4
+go 1.23.4
 
 require (
-	entgo.io/contrib v0.6.0
+	entgo.io/contrib v0.6.1-0.20250116155713-7b898266a940
 	entgo.io/ent v0.14.2
 	github.com/99designs/gqlgen v0.17.64
 	github.com/golang-jwt/jwt/v5 v5.2.1

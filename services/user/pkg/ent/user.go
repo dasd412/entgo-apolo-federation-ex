@@ -146,5 +146,8 @@ func (u *User) String() string {
 	return builder.String()
 }
 
+// IsEntity implement fedruntime.Entity
+func (u User) IsEntity() {}
+
 // Users is a parsable slice of User.
 type Users []*User

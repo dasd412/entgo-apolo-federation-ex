@@ -9,8 +9,6 @@ import (
 	"fmt"
 	"user/pkg/ent"
 	"user/pkg/graph/gen"
-
-	"entgo.io/contrib/entgql"
 )
 
 // Node is the resolver for the node field.
@@ -21,11 +19,6 @@ func (r *queryResolver) Node(ctx context.Context, id int) (ent.Noder, error) {
 // Nodes is the resolver for the nodes field.
 func (r *queryResolver) Nodes(ctx context.Context, ids []int) ([]ent.Noder, error) {
 	panic(fmt.Errorf("not implemented: Nodes - nodes"))
-}
-
-// Users is the resolver for the users field.
-func (r *queryResolver) Users(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, where *ent.UserWhereInput) (*ent.UserConnection, error) {
-	panic(fmt.Errorf("not implemented: Users - users"))
 }
 
 // Query returns gen.QueryResolver implementation.

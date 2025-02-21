@@ -5,6 +5,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
+	"github.com/vektah/gqlparser/v2/ast"
 	"time"
 )
 
@@ -35,11 +36,29 @@ func (User) Fields() []ent.Field {
 func (User) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entgql.RelayConnection(),
-		entgql.QueryField(),
 		entgql.MultiOrder(),
 		entgql.Mutations(
 			entgql.MutationCreate(),
 			entgql.MutationUpdate(),
 		),
+		GraphKeyDirective("id"),
 	}
+}
+func GraphKeyDirective(fields string) entgql.Annotation {
+	return entgql.Directives(keyDirective(fields))
+}
+
+func keyDirective(fields string) entgql.Directive {
+	var args []*ast.Argument
+	if fields != "" {
+		args = append(args, &ast.Argument{
+			Name: "fields",
+			Value: &ast.Value{
+				Raw:  fields,
+				Kind: ast.StringValue,
+			},
+		})
+	}
+
+	return entgql.NewDirective("key", args...)
 }
