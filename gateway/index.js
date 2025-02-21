@@ -5,9 +5,9 @@ const { startStandaloneServer } = require("@apollo/server/standalone");
 const gateway = new ApolloGateway({
     supergraphSdl: new IntrospectAndCompose({
         subgraphs: [
-            { name: "user", url: "http://localhost:4001/graphql" },
-            { name: "order", url: "http://localhost:4002/graphql" },
-            { name: "delivery", url: "http://localhost:4003/graphql" },
+            { name: "user", url: "http://localhost:8081/graphql" },
+            { name: "order", url: "http://localhost:8082/graphql" },
+            { name: "delivery", url: "http://localhost:8083/graphql" },
         ],
     }),
 });
