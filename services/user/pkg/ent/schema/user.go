@@ -18,7 +18,10 @@ func (User) Fields() []ent.Field {
 	return []ent.Field{
 		field.String("email").
 			Comment("이메일").
-			Unique(),
+			Unique().
+			Annotations(
+			//	GraphExternalDirective(),
+			),
 		field.String("password").
 			Comment("해시화된 비밀 번호"),
 		field.String("name").
@@ -41,9 +44,11 @@ func (User) Annotations() []schema.Annotation {
 			entgql.MutationCreate(),
 			entgql.MutationUpdate(),
 		),
+
 		GraphKeyDirective("id"),
 	}
 }
+
 func GraphKeyDirective(fields string) entgql.Annotation {
 	return entgql.Directives(keyDirective(fields))
 }
@@ -61,4 +66,27 @@ func keyDirective(fields string) entgql.Directive {
 	}
 
 	return entgql.NewDirective("key", args...)
+}
+
+func GraphExternalDirective() entgql.Annotation {
+	return entgql.Directives(entgql.NewDirective("external"))
+}
+
+func GraphProvidesDirective(fields string) entgql.Annotation {
+	return entgql.Directives(keyDirective(fields))
+}
+
+func providesDirective(fields string) entgql.Directive {
+	var args []*ast.Argument
+	if fields != "" {
+		args = append(args, &ast.Argument{
+			Name: "fields",
+			Value: &ast.Value{
+				Raw:  fields,
+				Kind: ast.StringValue,
+			},
+		})
+	}
+
+	return entgql.NewDirective("provides", args...)
 }
