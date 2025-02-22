@@ -5,6 +5,7 @@ package ent
 import (
 	"context"
 	"errors"
+	"fmt"
 	"order/pkg/ent/order"
 
 	"entgo.io/contrib/entgql"
@@ -150,19 +151,14 @@ func (c *OrderConnection) build(nodes []*Order, pager *orderPager, after *Cursor
 type OrderPaginateOption func(*orderPager) error
 
 // WithOrderOrder configures pagination ordering.
-func WithOrderOrder(order *OrderOrder) OrderPaginateOption {
-	if order == nil {
-		order = DefaultOrderOrder
-	}
-	o := *order
+func WithOrderOrder(order []*OrderOrder) OrderPaginateOption {
 	return func(pager *orderPager) error {
-		if err := o.Direction.Validate(); err != nil {
-			return err
+		for _, o := range order {
+			if err := o.Direction.Validate(); err != nil {
+				return err
+			}
 		}
-		if o.Field == nil {
-			o.Field = DefaultOrderOrder.Field
-		}
-		pager.order = &o
+		pager.order = append(pager.order, order...)
 		return nil
 	}
 }
@@ -180,7 +176,7 @@ func WithOrderFilter(filter func(*OrderQuery) (*OrderQuery, error)) OrderPaginat
 
 type orderPager struct {
 	reverse bool
-	order   *OrderOrder
+	order   []*OrderOrder
 	filter  func(*OrderQuery) (*OrderQuery, error)
 }
 
@@ -191,8 +187,10 @@ func newOrderPager(opts []OrderPaginateOption, reverse bool) (*orderPager, error
 			return nil, err
 		}
 	}
-	if pager.order == nil {
-		pager.order = DefaultOrderOrder
+	for i, o := range pager.order {
+		if i > 0 && o.Field == pager.order[i-1].Field {
+			return nil, fmt.Errorf("duplicate order direction %q", o.Direction)
+		}
 	}
 	return pager, nil
 }
@@ -205,48 +203,87 @@ func (p *orderPager) applyFilter(query *OrderQuery) (*OrderQuery, error) {
 }
 
 func (p *orderPager) toCursor(o *Order) Cursor {
-	return p.order.Field.toCursor(o)
+	cs_ := make([]any, 0, len(p.order))
+	for _, o_ := range p.order {
+		cs_ = append(cs_, o_.Field.toCursor(o).Value)
+	}
+	return Cursor{ID: o.ID, Value: cs_}
 }
 
 func (p *orderPager) applyCursors(query *OrderQuery, after, before *Cursor) (*OrderQuery, error) {
-	direction := p.order.Direction
+	idDirection := entgql.OrderDirectionAsc
 	if p.reverse {
-		direction = direction.Reverse()
+		idDirection = entgql.OrderDirectionDesc
 	}
-	for _, predicate := range entgql.CursorsPredicate(after, before, DefaultOrderOrder.Field.column, p.order.Field.column, direction) {
+	fields, directions := make([]string, 0, len(p.order)), make([]OrderDirection, 0, len(p.order))
+	for _, o := range p.order {
+		fields = append(fields, o.Field.column)
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		directions = append(directions, direction)
+	}
+	predicates, err := entgql.MultiCursorsPredicate(after, before, &entgql.MultiCursorsOptions{
+		FieldID:     DefaultOrderOrder.Field.column,
+		DirectionID: idDirection,
+		Fields:      fields,
+		Directions:  directions,
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, predicate := range predicates {
 		query = query.Where(predicate)
 	}
 	return query, nil
 }
 
 func (p *orderPager) applyOrder(query *OrderQuery) *OrderQuery {
-	direction := p.order.Direction
-	if p.reverse {
-		direction = direction.Reverse()
+	var defaultOrdered bool
+	for _, o := range p.order {
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(o.Field.toTerm(direction.OrderTermOption()))
+		if o.Field.column == DefaultOrderOrder.Field.column {
+			defaultOrdered = true
+		}
+		if len(query.ctx.Fields) > 0 {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
 	}
-	query = query.Order(p.order.Field.toTerm(direction.OrderTermOption()))
-	if p.order.Field != DefaultOrderOrder.Field {
+	if !defaultOrdered {
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
 		query = query.Order(DefaultOrderOrder.Field.toTerm(direction.OrderTermOption()))
-	}
-	if len(query.ctx.Fields) > 0 {
-		query.ctx.AppendFieldOnce(p.order.Field.column)
 	}
 	return query
 }
 
 func (p *orderPager) orderExpr(query *OrderQuery) sql.Querier {
-	direction := p.order.Direction
-	if p.reverse {
-		direction = direction.Reverse()
-	}
 	if len(query.ctx.Fields) > 0 {
-		query.ctx.AppendFieldOnce(p.order.Field.column)
+		for _, o := range p.order {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
 	}
 	return sql.ExprFunc(func(b *sql.Builder) {
-		b.Ident(p.order.Field.column).Pad().WriteString(string(direction))
-		if p.order.Field != DefaultOrderOrder.Field {
-			b.Comma().Ident(DefaultOrderOrder.Field.column).Pad().WriteString(string(direction))
+		for _, o := range p.order {
+			direction := o.Direction
+			if p.reverse {
+				direction = direction.Reverse()
+			}
+			b.Ident(o.Field.column).Pad().WriteString(string(direction))
+			b.Comma()
 		}
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		b.Ident(DefaultOrderOrder.Field.column).Pad().WriteString(string(direction))
 	})
 }
 

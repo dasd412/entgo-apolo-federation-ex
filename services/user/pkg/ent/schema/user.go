@@ -38,7 +38,6 @@ func (User) Fields() []ent.Field {
 
 func (User) Annotations() []schema.Annotation {
 	return []schema.Annotation{
-		entgql.RelayConnection(),
 		entgql.MultiOrder(),
 		entgql.Mutations(
 			entgql.MutationCreate(),

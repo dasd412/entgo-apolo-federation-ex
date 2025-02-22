@@ -137,5 +137,8 @@ func (o *Order) String() string {
 	return builder.String()
 }
 
+// IsEntity implement fedruntime.Entity
+func (o Order) IsEntity() {}
+
 // Orders is a parsable slice of Order.
 type Orders []*Order

@@ -27,21 +27,6 @@ input CreateUserInput {
   role: UserRole!
 }
 """
-Define a Relay Cursor type:
-https://relay.dev/graphql/connections.htm#sec-Cursor
-"""
-scalar Cursor
-"""
-An object with an ID.
-Follows the [Relay Global Object Identification Specification](https://relay.dev/graphql/objectidentification.htm)
-"""
-interface Node @goModel(model: "user/pkg/ent.Noder") {
-  """
-  The id of the object.
-  """
-  id: ID!
-}
-"""
 Possible directions in which to order a list of items when provided an `orderBy` argument.
 """
 enum OrderDirection {
@@ -53,48 +38,6 @@ enum OrderDirection {
   Specifies a descending order for a given `orderBy` argument.
   """
   DESC
-}
-"""
-Information about pagination in a connection.
-https://relay.dev/graphql/connections.htm#sec-undefined.PageInfo
-"""
-type PageInfo {
-  """
-  When paginating forwards, are there more items?
-  """
-  hasNextPage: Boolean!
-  """
-  When paginating backwards, are there more items?
-  """
-  hasPreviousPage: Boolean!
-  """
-  When paginating backwards, the cursor to continue.
-  """
-  startCursor: Cursor
-  """
-  When paginating forwards, the cursor to continue.
-  """
-  endCursor: Cursor
-}
-type Query {
-  """
-  Fetches an object given its ID.
-  """
-  node(
-    """
-    ID of the object.
-    """
-    id: ID!
-  ): Node
-  """
-  Lookup nodes by a list of IDs.
-  """
-  nodes(
-    """
-    The list of node IDs.
-    """
-    ids: [ID!]!
-  ): [Node]!
 }
 """
 The builtin Time type
@@ -122,7 +65,7 @@ input UpdateUserInput {
   """
   role: UserRole
 }
-type User implements Node @key(fields: "id") {
+type User @key(fields: "id") {
   id: ID!
   """
   이메일
@@ -144,36 +87,6 @@ type User implements Node @key(fields: "id") {
   인가 권한
   """
   role: UserRole!
-}
-"""
-A connection to a list of items.
-"""
-type UserConnection {
-  """
-  A list of edges.
-  """
-  edges: [UserEdge]
-  """
-  Information to aid in pagination.
-  """
-  pageInfo: PageInfo!
-  """
-  Identifies the total count of items in the connection.
-  """
-  totalCount: Int!
-}
-"""
-An edge in a connection.
-"""
-type UserEdge {
-  """
-  The item at the end of the edge.
-  """
-  node: User
-  """
-  A cursor for use in pagination.
-  """
-  cursor: Cursor!
 }
 """
 UserRole is enum for the field role

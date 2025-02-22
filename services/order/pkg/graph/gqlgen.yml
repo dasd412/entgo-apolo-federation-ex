@@ -12,6 +12,7 @@ exec:
 federation:
   filename: gen/federation.go
   package: gen
+  version: 2
 
 # Where should any generated models go?
 model:

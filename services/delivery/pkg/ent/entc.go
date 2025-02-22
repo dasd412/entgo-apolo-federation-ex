@@ -14,7 +14,7 @@ func main() {
 	ex, err := entgql.NewExtension(
 		entgql.WithSchemaGenerator(),
 		entgql.WithWhereInputs(true),
-		entgql.WithRelaySpec(true),
+		entgql.WithRelaySpec(false),
 		entgql.WithConfigPath("../graph/gqlgen.yml"),
 		entgql.WithSchemaPath("../graph/ent.graphql"),
 	)
@@ -27,6 +27,7 @@ func main() {
 			ex,
 		),
 		entc.FeatureNames("privacy", "schema/snapshot"),
+		entc.TemplateDir("./template"),
 	}
 	if err := entc.Generate("./schema", &gen.Config{}, opts...); err != nil {
 		log.Fatalf("running ent codegen: %v", err)

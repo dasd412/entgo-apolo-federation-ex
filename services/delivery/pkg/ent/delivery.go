@@ -135,5 +135,8 @@ func (d *Delivery) String() string {
 	return builder.String()
 }
 
+// IsEntity implement fedruntime.Entity
+func (d Delivery) IsEntity() {}
+
 // Deliveries is a parsable slice of Delivery.
 type Deliveries []*Delivery
