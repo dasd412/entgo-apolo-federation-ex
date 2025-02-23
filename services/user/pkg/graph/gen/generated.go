@@ -504,7 +504,9 @@ input UserWhereInput {
   roleNotIn: [UserRole!]
 }
 `, BuiltIn: false},
-	{Name: "../extended.graphql", Input: ``, BuiltIn: false},
+	{Name: "../extended.graphql", Input: `extend schema
+@link(url: "https://specs.apollo.dev/federation/v2.3", import: ["@key", "@external"])
+`, BuiltIn: false},
 	{Name: "../schema.graphql", Input: `type Mutation {
     deleteUser(id: ID!): Boolean!
 }

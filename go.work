@@ -6,6 +6,7 @@ use (
 	./libs/config
 	./libs/db
 	./libs/errorwrapper
+	./libs/federation
 	./libs/ratelimit
 	./libs/scheduler
 	./libs/server
