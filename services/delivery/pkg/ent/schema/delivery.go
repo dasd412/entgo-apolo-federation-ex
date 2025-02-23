@@ -17,7 +17,7 @@ type Delivery struct {
 // Fields of the Delivery.
 func (Delivery) Fields() []ent.Field {
 	return []ent.Field{
-		field.Int("order_id"),
+		field.Int("order_id").Unique(),
 		field.Int("user_id"),
 		field.Enum("status").Values("pending", "in_transit", "delivered"),
 		field.String("tracking_number").Optional(),

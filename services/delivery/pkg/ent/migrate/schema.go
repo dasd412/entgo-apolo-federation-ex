@@ -11,7 +11,7 @@ var (
 	// DeliveriesColumns holds the columns for the "deliveries" table.
 	DeliveriesColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeInt, Increment: true},
-		{Name: "order_id", Type: field.TypeInt},
+		{Name: "order_id", Type: field.TypeInt, Unique: true},
 		{Name: "user_id", Type: field.TypeInt},
 		{Name: "status", Type: field.TypeEnum, Enums: []string{"pending", "in_transit", "delivered"}},
 		{Name: "tracking_number", Type: field.TypeString, Nullable: true},
