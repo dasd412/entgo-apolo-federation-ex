@@ -17,10 +17,7 @@ type Order struct {
 // Fields of the Order.
 func (Order) Fields() []ent.Field {
 	return []ent.Field{
-		field.Int("user_id").
-			Annotations(
-				federation.GraphExternalDirective(),
-			), // User ID (Foreign Key 역할)
+		field.Int("user_id"), // User ID (Foreign Key 역할)
 		field.Enum("status").Values("pending", "paid", "shipped", "canceled"),
 		field.Float("total_price"),
 		field.Time("created_at").Default(time.Now),

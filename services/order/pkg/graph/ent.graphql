@@ -12,7 +12,7 @@ input CreateOrderInput {
 }
 type Order @key(fields: "id") {
   id: ID!
-  userID: Int! @external
+  userID: Int!
   status: OrderStatus!
   totalPrice: Float!
   createdAt: Time!

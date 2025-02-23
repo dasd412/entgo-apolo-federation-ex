@@ -16,6 +16,11 @@ type (
 			client *ent.Client,
 			opts ...func(query *ent.OrderQuery),
 		) (*ent.Order, error)
+		FindAll(
+			ctx context.Context,
+			client *ent.Client,
+			opts ...func(query *ent.OrderQuery),
+		) ([]*ent.Order, error)
 		Paginate(
 			ctx context.Context,
 			client *ent.Client,
@@ -57,6 +62,17 @@ func (u *orderRepository) FindOne(
 	}
 
 	return query.Only(ctx)
+}
+
+func (u *orderRepository) FindAll(ctx context.Context, client *ent.Client, opts ...func(query *ent.OrderQuery)) ([]*ent.Order, error) {
+	query := client.Order.
+		Query()
+
+	for _, opt := range opts {
+		opt(query)
+	}
+
+	return query.All(ctx)
 }
 
 func (u *orderRepository) Paginate(ctx context.Context, client *ent.Client, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, where *ent.OrderWhereInput) (*ent.OrderConnection, error) {

@@ -387,7 +387,7 @@ input CreateOrderInput {
 }
 type Order @key(fields: "id") {
   id: ID!
-  userID: Int! @external
+  userID: Int!
   status: OrderStatus!
   totalPrice: Float!
   createdAt: Time!
@@ -489,10 +489,11 @@ input UpdateOrderInput {
   createdAt: Time
 }
 `, BuiltIn: false},
-	{Name: "../extended.graphql", Input: `extend type User @key(fields: "id") {
-    id: ID! @external
-    orders: [Order!]!
-}`, BuiltIn: false},
+	{Name: "../extended.graphql", Input: `extend type User@key(fields:"id"){
+    id:ID! @external
+    orders:[Order!]!
+}
+`, BuiltIn: false},
 	{Name: "../schema.graphql", Input: `type Mutation {
     createOrder(input: CreateOrderInput!): Order!
     updateOrder(id: ID!, input: UpdateOrderInput!): Order!

@@ -19,6 +19,10 @@ type (
 			client *ent.Client,
 			id int,
 		) (*ent.Order, error)
+		FindOrdersByUserId(
+			ctx context.Context,
+			client *ent.Client,
+			userId int) ([]*ent.Order, error)
 		Paginate(
 			ctx context.Context,
 			client *ent.Client,
@@ -60,6 +64,14 @@ func (s *orderService) FindOrder(
 	return s.orderRepository.FindOne(
 		ctx, client, func(query *ent.OrderQuery) {
 			query.Where(order.ID(id))
+		},
+	)
+}
+
+func (s *orderService) FindOrdersByUserId(ctx context.Context, client *ent.Client, userId int) ([]*ent.Order, error) {
+	return s.orderRepository.FindAll(
+		ctx, client, func(query *ent.OrderQuery) {
+			query.Where(order.UserID(userId))
 		},
 	)
 }
