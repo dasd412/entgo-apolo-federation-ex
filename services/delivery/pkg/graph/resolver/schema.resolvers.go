@@ -36,8 +36,4 @@ func (r *queryResolver) Delivery(ctx context.Context, id int) (*ent.Delivery, er
 // Mutation returns gen.MutationResolver implementation.
 func (r *Resolver) Mutation() gen.MutationResolver { return &mutationResolver{r} }
 
-// Query returns gen.QueryResolver implementation.
-func (r *Resolver) Query() gen.QueryResolver { return &queryResolver{r} }
-
 type mutationResolver struct{ *Resolver }
-type queryResolver struct{ *Resolver }

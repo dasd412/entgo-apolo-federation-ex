@@ -12,7 +12,7 @@ exec:
 federation:
   filename: gen/federation.go
   package: gen
-
+  version: 2
 # Where should any generated models go?
 model:
   filename: gen/graphqlmodel/models_gen.go
@@ -59,6 +59,6 @@ models:
       - github.com/99designs/gqlgen/graphql.Int64
       - github.com/99designs/gqlgen/graphql.Int32
 
-  DeliveryNode:
+  Node:
     model:
       - delivery/pkg/ent.Noder

@@ -27,12 +27,13 @@ func (Delivery) Fields() []ent.Field {
 
 func (Delivery) Annotations() []schema.Annotation {
 	return []schema.Annotation{
+		entgql.RelayConnection(),
+		entgql.QueryField(),
 		entgql.MultiOrder(),
 		entgql.Mutations(
 			entgql.MutationCreate(),
 			entgql.MutationUpdate(),
 		),
-
 		federation.GraphKeyDirective("id"),
 	}
 }

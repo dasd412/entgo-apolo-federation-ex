@@ -570,7 +570,7 @@ enum OrderDirection {
 Information about pagination in a connection.
 https://relay.dev/graphql/connections.htm#sec-undefined.PageInfo
 """
-type PageInfo @shareable {
+type PageInfo {
   """
   When paginating forwards, are there more items?
   """
@@ -790,7 +790,9 @@ input UserWhereInput {
   roleNotIn: [UserRole!]
 }
 `, BuiltIn: false},
-	{Name: "../extended.graphql", Input: `extend type Order @key(fields:"userID"){
+	{Name: "../extended.graphql", Input: `
+
+extend type Order @key(fields:"userID"){
     userID:Int! @external
     user:User! @requires(fields:"userID")
 }

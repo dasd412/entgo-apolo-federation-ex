@@ -11,13 +11,48 @@ input CreateDeliveryInput {
   trackingNumber: String
   createdAt: Time
 }
-type Delivery @key(fields: "id") {
+"""
+Define a Relay Cursor type:
+https://relay.dev/graphql/connections.htm#sec-Cursor
+"""
+scalar Cursor
+type Delivery implements Node @key(fields: "id") {
   id: ID!
   orderID: Int!
   userID: Int!
   status: DeliveryStatus!
   trackingNumber: String
   createdAt: Time!
+}
+"""
+A connection to a list of items.
+"""
+type DeliveryConnection {
+  """
+  A list of edges.
+  """
+  edges: [DeliveryEdge]
+  """
+  Information to aid in pagination.
+  """
+  pageInfo: PageInfo!
+  """
+  Identifies the total count of items in the connection.
+  """
+  totalCount: Int!
+}
+"""
+An edge in a connection.
+"""
+type DeliveryEdge {
+  """
+  The item at the end of the edge.
+  """
+  node: Delivery
+  """
+  A cursor for use in pagination.
+  """
+  cursor: Cursor!
 }
 """
 DeliveryStatus is enum for the field status
@@ -106,6 +141,16 @@ input DeliveryWhereInput {
   createdAtLTE: Time
 }
 """
+An object with an ID.
+Follows the [Relay Global Object Identification Specification](https://relay.dev/graphql/objectidentification.htm)
+"""
+interface Node {
+  """
+  The id of the object.
+  """
+  id: ID!
+}
+"""
 Possible directions in which to order a list of items when provided an `orderBy` argument.
 """
 enum OrderDirection {
@@ -117,6 +162,56 @@ enum OrderDirection {
   Specifies a descending order for a given `orderBy` argument.
   """
   DESC
+}
+"""
+Information about pagination in a connection.
+https://relay.dev/graphql/connections.htm#sec-undefined.PageInfo
+"""
+type PageInfo {
+  """
+  When paginating forwards, are there more items?
+  """
+  hasNextPage: Boolean!
+  """
+  When paginating backwards, are there more items?
+  """
+  hasPreviousPage: Boolean!
+  """
+  When paginating backwards, the cursor to continue.
+  """
+  startCursor: Cursor
+  """
+  When paginating forwards, the cursor to continue.
+  """
+  endCursor: Cursor
+}
+type Query {
+  deliveries(
+    """
+    Returns the elements in the list that come after the specified cursor.
+    """
+    after: Cursor
+
+    """
+    Returns the first _n_ elements from the list.
+    """
+    first: Int
+
+    """
+    Returns the elements in the list that come before the specified cursor.
+    """
+    before: Cursor
+
+    """
+    Returns the last _n_ elements from the list.
+    """
+    last: Int
+
+    """
+    Filtering options for Deliveries returned from the connection.
+    """
+    where: DeliveryWhereInput
+  ): DeliveryConnection!
 }
 """
 The builtin Time type

@@ -17,7 +17,7 @@ func main() {
 		entgql.WithRelaySpec(true),
 		entgql.WithConfigPath("../graph/gqlgen.yml"),
 		entgql.WithSchemaPath("../graph/ent.graphql"),
-		entgql.WithSchemaHook(federation.RemoveNodeGoModel, federation.RemoveNodeQueries, federation.SetPageInfoShareable),
+		entgql.WithSchemaHook(federation.RemoveNodeGoModel, federation.RemoveNodeQueries),
 	)
 	if err != nil {
 		log.Fatalf("creating entgql extension: %v", err)
