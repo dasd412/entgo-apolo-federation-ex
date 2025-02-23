@@ -8,7 +8,22 @@ import (
 	"context"
 	"user/pkg/ent"
 	"user/pkg/graph/gen"
+	"user/pkg/graph/gen/graphqlmodel"
 )
+
+// FindOrderByUserID is the resolver for the findOrderByUserID field.
+func (r *entityResolver) FindOrderByUserID(ctx context.Context, userID int) (*graphqlmodel.Order, error) {
+	user, err := r.userService.FindUser(ctx, r.entClient, userID)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return &graphqlmodel.Order{
+		UserID: userID,
+		User:   user,
+	}, nil
+}
 
 // FindUserByID is the resolver for the findUserByID field.
 func (r *entityResolver) FindUserByID(ctx context.Context, id int) (*ent.User, error) {
