@@ -6,6 +6,13 @@ import (
 	"user/pkg/ent"
 )
 
+type Delivery struct {
+	UserID int       `json:"userID"`
+	User   *ent.User `json:"user"`
+}
+
+func (Delivery) IsEntity() {}
+
 type Order struct {
 	UserID int       `json:"userID"`
 	User   *ent.User `json:"user"`

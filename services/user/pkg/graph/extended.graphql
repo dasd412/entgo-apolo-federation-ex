@@ -2,3 +2,8 @@ extend type Order @key(fields:"userID"){
     userID:Int! @external
     user:User! @requires(fields:"userID")
 }
+
+extend type Delivery @key(fields:"userID"){
+    userID:Int! @external
+    user:User! @requires(fields:"userID")
+}
