@@ -12,7 +12,7 @@ input CreateDeliveryInput {
 }
 type Delivery @key(fields: "id") {
   id: ID!
-  orderID: Int!
+  orderID: Int! @external
   status: DeliveryStatus!
   trackingNumber: String
   createdAt: Time!

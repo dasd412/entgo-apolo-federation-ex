@@ -26,7 +26,7 @@ func main() {
 		entc.Extensions(
 			ex,
 		),
-		entc.FeatureNames("privacy", "schema/snapshot"),
+		//entc.FeatureNames("privacy", "schema/snapshot"),
 		entc.TemplateDir("./template"),
 	}
 	if err := entc.Generate("./schema", &gen.Config{}, opts...); err != nil {

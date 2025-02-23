@@ -8,12 +8,18 @@ import (
 	"context"
 	"delivery/pkg/ent"
 	"delivery/pkg/graph/gen"
+	"delivery/pkg/graph/gen/graphqlmodel"
 	"fmt"
 )
 
 // FindDeliveryByID is the resolver for the findDeliveryByID field.
 func (r *entityResolver) FindDeliveryByID(ctx context.Context, id int) (*ent.Delivery, error) {
 	panic(fmt.Errorf("not implemented: FindDeliveryByID - findDeliveryByID"))
+}
+
+// FindUserByID is the resolver for the findUserByID field.
+func (r *entityResolver) FindUserByID(ctx context.Context, id int) (*graphqlmodel.User, error) {
+	panic(fmt.Errorf("not implemented: FindUserByID - findUserByID"))
 }
 
 // Entity returns gen.EntityResolver implementation.

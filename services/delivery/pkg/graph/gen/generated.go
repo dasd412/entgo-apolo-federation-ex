@@ -7,6 +7,7 @@ import (
 	"context"
 	"delivery/pkg/ent"
 	"delivery/pkg/ent/delivery"
+	"delivery/pkg/graph/gen/graphqlmodel"
 	"errors"
 	"fmt"
 	"strconv"
@@ -60,6 +61,7 @@ type ComplexityRoot struct {
 
 	Entity struct {
 		FindDeliveryByID func(childComplexity int, id int) int
+		FindUserByID     func(childComplexity int, id int) int
 	}
 
 	Mutation struct {
@@ -72,6 +74,11 @@ type ComplexityRoot struct {
 		__resolve_entities func(childComplexity int, representations []map[string]any) int
 	}
 
+	User struct {
+		Deliveries func(childComplexity int) int
+		ID         func(childComplexity int) int
+	}
+
 	_Service struct {
 		SDL func(childComplexity int) int
 	}
@@ -79,6 +86,7 @@ type ComplexityRoot struct {
 
 type EntityResolver interface {
 	FindDeliveryByID(ctx context.Context, id int) (*ent.Delivery, error)
+	FindUserByID(ctx context.Context, id int) (*graphqlmodel.User, error)
 }
 type MutationResolver interface {
 	DeleteDelivery(ctx context.Context, id int) (bool, error)
@@ -153,6 +161,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Entity.FindDeliveryByID(childComplexity, args["id"].(int)), true
 
+	case "Entity.findUserByID":
+		if e.complexity.Entity.FindUserByID == nil {
+			break
+		}
+
+		args, err := ec.field_Entity_findUserByID_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Entity.FindUserByID(childComplexity, args["id"].(int)), true
+
 	case "Mutation.deleteDelivery":
 		if e.complexity.Mutation.DeleteDelivery == nil {
 			break
@@ -195,6 +215,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Query.__resolve_entities(childComplexity, args["representations"].([]map[string]any)), true
+
+	case "User.deliveries":
+		if e.complexity.User.Deliveries == nil {
+			break
+		}
+
+		return e.complexity.User.Deliveries(childComplexity), true
+
+	case "User.id":
+		if e.complexity.User.ID == nil {
+			break
+		}
+
+		return e.complexity.User.ID(childComplexity), true
 
 	case "_Service.sdl":
 		if e.complexity._Service.SDL == nil {
@@ -325,7 +359,7 @@ input CreateDeliveryInput {
 }
 type Delivery @key(fields: "id") {
   id: ID!
-  orderID: Int!
+  orderID: Int! @external
   status: DeliveryStatus!
   trackingNumber: String
   createdAt: Time!
@@ -434,6 +468,11 @@ input UpdateDeliveryInput {
   createdAt: Time
 }
 `, BuiltIn: false},
+	{Name: "../extended.graphql", Input: `extend type User@key(fields:"id"){
+    id:ID!
+    deliveries:[Delivery!]!
+}
+`, BuiltIn: false},
 	{Name: "../schema.graphql", Input: `type Mutation {
     deleteDelivery(id: ID!): Boolean!
 }
@@ -452,11 +491,12 @@ extend type Query {
 `, BuiltIn: true},
 	{Name: "../federation/entity.graphql", Input: `
 # a union of all types that use the @key directive
-union _Entity = Delivery
+union _Entity = Delivery | User
 
 # fake type to build resolver interfaces for users to implement
 type Entity {
 	findDeliveryByID(id: ID!,): Delivery!
+	findUserByID(id: ID!,): User!
 }
 
 type _Service {
@@ -486,6 +526,34 @@ func (ec *executionContext) field_Entity_findDeliveryByID_args(ctx context.Conte
 	return args, nil
 }
 func (ec *executionContext) field_Entity_findDeliveryByID_argsID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (int, error) {
+	if _, ok := rawArgs["id"]; !ok {
+		var zeroVal int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+	if tmp, ok := rawArgs["id"]; ok {
+		return ec.unmarshalNID2int(ctx, tmp)
+	}
+
+	var zeroVal int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Entity_findUserByID_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Entity_findUserByID_argsID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Entity_findUserByID_argsID(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (int, error) {
@@ -1019,6 +1087,67 @@ func (ec *executionContext) fieldContext_Entity_findDeliveryByID(ctx context.Con
 	return fc, nil
 }
 
+func (ec *executionContext) _Entity_findUserByID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Entity_findUserByID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Entity().FindUserByID(rctx, fc.Args["id"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*graphqlmodel.User)
+	fc.Result = res
+	return ec.marshalNUser2ᚖdeliveryᚋpkgᚋgraphᚋgenᚋgraphqlmodelᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Entity_findUserByID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Entity",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_User_id(ctx, field)
+			case "deliveries":
+				return ec.fieldContext_User_deliveries(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Entity_findUserByID_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Mutation_deleteDelivery(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Mutation_deleteDelivery(ctx, field)
 	if err != nil {
@@ -1370,6 +1499,106 @@ func (ec *executionContext) fieldContext_Query___schema(_ context.Context, field
 				return ec.fieldContext___Schema_directives(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type __Schema", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _User_id(ctx context.Context, field graphql.CollectedField, obj *graphqlmodel.User) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_User_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNID2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_User_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _User_deliveries(ctx context.Context, field graphql.CollectedField, obj *graphqlmodel.User) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_User_deliveries(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Deliveries, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.([]*ent.Delivery)
+	fc.Result = res
+	return ec.marshalNDelivery2ᚕᚖdeliveryᚋpkgᚋentᚐDeliveryᚄ(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_User_deliveries(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Delivery_id(ctx, field)
+			case "orderID":
+				return ec.fieldContext_Delivery_orderID(ctx, field)
+			case "status":
+				return ec.fieldContext_Delivery_status(ctx, field)
+			case "trackingNumber":
+				return ec.fieldContext_Delivery_trackingNumber(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Delivery_createdAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Delivery", field.Name)
 		},
 	}
 	return fc, nil
@@ -3827,6 +4056,13 @@ func (ec *executionContext) __Entity(ctx context.Context, sel ast.SelectionSet, 
 			return graphql.Null
 		}
 		return ec._Delivery(ctx, sel, obj)
+	case graphqlmodel.User:
+		return ec._User(ctx, sel, &obj)
+	case *graphqlmodel.User:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._User(ctx, sel, obj)
 	default:
 		panic(fmt.Errorf("unexpected type %T", obj))
 	}
@@ -3921,6 +4157,28 @@ func (ec *executionContext) _Entity(ctx context.Context, sel ast.SelectionSet) g
 					}
 				}()
 				res = ec._Entity_findDeliveryByID(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "findUserByID":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Entity_findUserByID(ctx, field)
 				if res == graphql.Null {
 					atomic.AddUint32(&fs.Invalids, 1)
 				}
@@ -4098,6 +4356,50 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Query___schema(ctx, field)
 			})
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var userImplementors = []string{"User", "_Entity"}
+
+func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj *graphqlmodel.User) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, userImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("User")
+		case "id":
+			out.Values[i] = ec._User_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "deliveries":
+			out.Values[i] = ec._User_deliveries(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4511,6 +4813,50 @@ func (ec *executionContext) marshalNDelivery2deliveryᚋpkgᚋentᚐDelivery(ctx
 	return ec._Delivery(ctx, sel, &v)
 }
 
+func (ec *executionContext) marshalNDelivery2ᚕᚖdeliveryᚋpkgᚋentᚐDeliveryᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Delivery) graphql.Marshaler {
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalNDelivery2ᚖdeliveryᚋpkgᚋentᚐDelivery(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	for _, e := range ret {
+		if e == graphql.Null {
+			return graphql.Null
+		}
+	}
+
+	return ret
+}
+
 func (ec *executionContext) marshalNDelivery2ᚖdeliveryᚋpkgᚋentᚐDelivery(ctx context.Context, sel ast.SelectionSet, v *ent.Delivery) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -4594,6 +4940,20 @@ func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel as
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNUser2deliveryᚋpkgᚋgraphᚋgenᚋgraphqlmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v graphqlmodel.User) graphql.Marshaler {
+	return ec._User(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNUser2ᚖdeliveryᚋpkgᚋgraphᚋgenᚋgraphqlmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *graphqlmodel.User) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._User(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalN_Any2map(ctx context.Context, v any) (map[string]any, error) {

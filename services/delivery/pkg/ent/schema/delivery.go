@@ -5,6 +5,7 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/schema"
 	"entgo.io/ent/schema/field"
+	"federation"
 	"github.com/vektah/gqlparser/v2/ast"
 	"time"
 )
@@ -17,7 +18,9 @@ type Delivery struct {
 // Fields of the Delivery.
 func (Delivery) Fields() []ent.Field {
 	return []ent.Field{
-		field.Int("order_id"), // Order ID (Foreign Key 역할)
+		field.Int("order_id").Annotations(
+			federation.GraphExternalDirective(),
+		), // Order ID (Foreign Key 역할)
 		field.Enum("status").Values("pending", "in_transit", "delivered"),
 		field.String("tracking_number").Optional(),
 		field.Time("created_at").Default(time.Now),
