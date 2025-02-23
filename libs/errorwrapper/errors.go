@@ -3,7 +3,6 @@ package errorwrapper
 import (
 	"context"
 	"encoding/json"
-	"entgo.io/ent/privacy"
 	"errors"
 	"fmt"
 	"github.com/99designs/gqlgen/graphql"
@@ -51,10 +50,6 @@ func WrapError(ctx context.Context, err error) *gqlerror.Error {
 			gqlErr.Extensions = map[string]interface{}{
 				"code": "INTERNAL_ERROR",
 			}
-		}
-	} else if errors.As(err, &privacy.Deny) {
-		gqlErr.Extensions = map[string]interface{}{
-			"code": "UNAUTHORIZED",
 		}
 	}
 
