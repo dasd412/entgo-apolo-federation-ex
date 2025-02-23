@@ -6,14 +6,13 @@ package resolver
 
 import (
 	"context"
-	"fmt"
 	"user/pkg/ent"
 	"user/pkg/graph/gen"
 )
 
 // FindUserByID is the resolver for the findUserByID field.
 func (r *entityResolver) FindUserByID(ctx context.Context, id int) (*ent.User, error) {
-	panic(fmt.Errorf("not implemented: FindUserByID - findUserByID"))
+	return r.userService.FindUser(ctx, r.entClient, id)
 }
 
 // Entity returns gen.EntityResolver implementation.

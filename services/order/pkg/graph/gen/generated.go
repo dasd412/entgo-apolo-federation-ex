@@ -57,7 +57,9 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
+		CreateOrder func(childComplexity int, input ent.CreateOrderInput) int
 		DeleteOrder func(childComplexity int, id int) int
+		UpdateOrder func(childComplexity int, id int, input ent.UpdateOrderInput) int
 	}
 
 	Order struct {
@@ -89,6 +91,8 @@ type EntityResolver interface {
 	FindUserByID(ctx context.Context, id int) (*graphqlmodel.User, error)
 }
 type MutationResolver interface {
+	CreateOrder(ctx context.Context, input ent.CreateOrderInput) (*ent.Order, error)
+	UpdateOrder(ctx context.Context, id int, input ent.UpdateOrderInput) (*ent.Order, error)
 	DeleteOrder(ctx context.Context, id int) (bool, error)
 }
 type QueryResolver interface {
@@ -138,6 +142,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Entity.FindUserByID(childComplexity, args["id"].(int)), true
 
+	case "Mutation.createOrder":
+		if e.complexity.Mutation.CreateOrder == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createOrder_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateOrder(childComplexity, args["input"].(ent.CreateOrderInput)), true
+
 	case "Mutation.deleteOrder":
 		if e.complexity.Mutation.DeleteOrder == nil {
 			break
@@ -149,6 +165,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.DeleteOrder(childComplexity, args["id"].(int)), true
+
+	case "Mutation.updateOrder":
+		if e.complexity.Mutation.UpdateOrder == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_updateOrder_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UpdateOrder(childComplexity, args["id"].(int), args["input"].(ent.UpdateOrderInput)), true
 
 	case "Order.createdAt":
 		if e.complexity.Order.CreatedAt == nil {
@@ -461,13 +489,13 @@ input UpdateOrderInput {
   createdAt: Time
 }
 `, BuiltIn: false},
-	{Name: "../extended.graphql", Input: `
-extend type User@key(fields:"id"){
-    id:ID!
-    orders:[Order!]!
-}
-`, BuiltIn: false},
+	{Name: "../extended.graphql", Input: `extend type User @key(fields: "id") {
+    id: ID! @external
+    orders: [Order!]!
+}`, BuiltIn: false},
 	{Name: "../schema.graphql", Input: `type Mutation {
+    createOrder(input: CreateOrderInput!): Order!
+    updateOrder(id: ID!, input: UpdateOrderInput!): Order!
     deleteOrder(id: ID!): Boolean!
 }
 
@@ -607,6 +635,34 @@ func (ec *executionContext) field_Entity_findUserByID_argsID(
 	return zeroVal, nil
 }
 
+func (ec *executionContext) field_Mutation_createOrder_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_createOrder_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_createOrder_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (ent.CreateOrderInput, error) {
+	if _, ok := rawArgs["input"]; !ok {
+		var zeroVal ent.CreateOrderInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["input"]; ok {
+		return ec.unmarshalNCreateOrderInput2orderᚋpkgᚋentᚐCreateOrderInput(ctx, tmp)
+	}
+
+	var zeroVal ent.CreateOrderInput
+	return zeroVal, nil
+}
+
 func (ec *executionContext) field_Mutation_deleteOrder_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
 	var err error
 	args := map[string]any{}
@@ -632,6 +688,57 @@ func (ec *executionContext) field_Mutation_deleteOrder_argsID(
 	}
 
 	var zeroVal int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_updateOrder_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Mutation_updateOrder_argsID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	arg1, err := ec.field_Mutation_updateOrder_argsInput(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["input"] = arg1
+	return args, nil
+}
+func (ec *executionContext) field_Mutation_updateOrder_argsID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (int, error) {
+	if _, ok := rawArgs["id"]; !ok {
+		var zeroVal int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+	if tmp, ok := rawArgs["id"]; ok {
+		return ec.unmarshalNID2int(ctx, tmp)
+	}
+
+	var zeroVal int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Mutation_updateOrder_argsInput(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (ent.UpdateOrderInput, error) {
+	if _, ok := rawArgs["input"]; !ok {
+		var zeroVal ent.UpdateOrderInput
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+	if tmp, ok := rawArgs["input"]; ok {
+		return ec.unmarshalNUpdateOrderInput2orderᚋpkgᚋentᚐUpdateOrderInput(ctx, tmp)
+	}
+
+	var zeroVal ent.UpdateOrderInput
 	return zeroVal, nil
 }
 
@@ -961,6 +1068,140 @@ func (ec *executionContext) fieldContext_Entity_findUserByID(ctx context.Context
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Entity_findUserByID_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createOrder(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_createOrder(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateOrder(rctx, fc.Args["input"].(ent.CreateOrderInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ent.Order)
+	fc.Result = res
+	return ec.marshalNOrder2ᚖorderᚋpkgᚋentᚐOrder(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createOrder(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Order_id(ctx, field)
+			case "userID":
+				return ec.fieldContext_Order_userID(ctx, field)
+			case "status":
+				return ec.fieldContext_Order_status(ctx, field)
+			case "totalPrice":
+				return ec.fieldContext_Order_totalPrice(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Order_createdAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Order", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createOrder_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_updateOrder(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_updateOrder(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UpdateOrder(rctx, fc.Args["id"].(int), fc.Args["input"].(ent.UpdateOrderInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*ent.Order)
+	fc.Result = res
+	return ec.marshalNOrder2ᚖorderᚋpkgᚋentᚐOrder(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_updateOrder(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Order_id(ctx, field)
+			case "userID":
+				return ec.fieldContext_Order_userID(ctx, field)
+			case "status":
+				return ec.fieldContext_Order_status(ctx, field)
+			case "totalPrice":
+				return ec.fieldContext_Order_totalPrice(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Order_createdAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Order", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_updateOrder_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
 	}
@@ -4160,6 +4401,20 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Mutation")
+		case "createOrder":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createOrder(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "updateOrder":
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_updateOrder(ctx, field)
+			})
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
 		case "deleteOrder":
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_deleteOrder(ctx, field)
@@ -4795,6 +5050,11 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
+func (ec *executionContext) unmarshalNCreateOrderInput2orderᚋpkgᚋentᚐCreateOrderInput(ctx context.Context, v any) (ent.CreateOrderInput, error) {
+	res, err := ec.unmarshalInputCreateOrderInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalNFieldSet2string(ctx context.Context, v any) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -4956,6 +5216,11 @@ func (ec *executionContext) marshalNTime2timeᚐTime(ctx context.Context, sel as
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) unmarshalNUpdateOrderInput2orderᚋpkgᚋentᚐUpdateOrderInput(ctx context.Context, v any) (ent.UpdateOrderInput, error) {
+	res, err := ec.unmarshalInputUpdateOrderInput(ctx, v)
+	return res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalNUser2orderᚋpkgᚋgraphᚋgenᚋgraphqlmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v graphqlmodel.User) graphql.Marshaler {

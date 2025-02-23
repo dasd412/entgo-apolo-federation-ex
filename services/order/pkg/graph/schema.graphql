@@ -1,4 +1,6 @@
 type Mutation {
+    createOrder(input: CreateOrderInput!): Order!
+    updateOrder(id: ID!, input: UpdateOrderInput!): Order!
     deleteOrder(id: ID!): Boolean!
 }
 

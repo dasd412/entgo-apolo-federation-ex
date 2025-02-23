@@ -6,19 +6,31 @@ package resolver
 
 import (
 	"context"
-	"fmt"
 	"order/pkg/ent"
 	"order/pkg/graph/gen"
 )
 
+// CreateOrder is the resolver for the createOrder field.
+func (r *mutationResolver) CreateOrder(ctx context.Context, input ent.CreateOrderInput) (*ent.Order, error) {
+	entClient := ent.FromContext(ctx)
+	return r.orderService.CreateOrder(ctx, entClient, input)
+}
+
+// UpdateOrder is the resolver for the updateOrder field.
+func (r *mutationResolver) UpdateOrder(ctx context.Context, id int, input ent.UpdateOrderInput) (*ent.Order, error) {
+	entClient := ent.FromContext(ctx)
+	return r.orderService.UpdateOrder(ctx, entClient, id, input)
+}
+
 // DeleteOrder is the resolver for the deleteOrder field.
 func (r *mutationResolver) DeleteOrder(ctx context.Context, id int) (bool, error) {
-	panic(fmt.Errorf("not implemented: DeleteOrder - deleteOrder"))
+	entClient := ent.FromContext(ctx)
+	return r.orderService.DeleteOrder(ctx, entClient, id)
 }
 
 // Order is the resolver for the order field.
 func (r *queryResolver) Order(ctx context.Context, id int) (*ent.Order, error) {
-	panic(fmt.Errorf("not implemented: Order - order"))
+	return r.orderService.FindOrder(ctx, r.entClient, id)
 }
 
 // Mutation returns gen.MutationResolver implementation.
