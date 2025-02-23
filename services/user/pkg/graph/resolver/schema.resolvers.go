@@ -6,19 +6,31 @@ package resolver
 
 import (
 	"context"
-	"fmt"
 	"user/pkg/ent"
 	"user/pkg/graph/gen"
 )
 
+// CreateUser is the resolver for the createUser field.
+func (r *mutationResolver) CreateUser(ctx context.Context, input ent.CreateUserInput) (*ent.User, error) {
+	entClient := ent.FromContext(ctx)
+	return r.userService.CreateUser(ctx, entClient, input)
+}
+
+// UpdateUser is the resolver for the updateUser field.
+func (r *mutationResolver) UpdateUser(ctx context.Context, id int, input ent.UpdateUserInput) (*ent.User, error) {
+	entClient := ent.FromContext(ctx)
+	return r.userService.UpdateUser(ctx, entClient, id, input)
+}
+
 // DeleteUser is the resolver for the deleteUser field.
 func (r *mutationResolver) DeleteUser(ctx context.Context, id int) (bool, error) {
-	panic(fmt.Errorf("not implemented: DeleteUser - deleteUser"))
+	entClient := ent.FromContext(ctx)
+	return r.userService.DeleteUser(ctx, entClient, id)
 }
 
 // User is the resolver for the user field.
 func (r *queryResolver) User(ctx context.Context, id int) (*ent.User, error) {
-	panic(fmt.Errorf("not implemented: User - user"))
+	return r.userService.FindUser(ctx, r.entClient, id)
 }
 
 // Mutation returns gen.MutationResolver implementation.
