@@ -15,7 +15,7 @@ func init() {
 	deliveryFields := schema.Delivery{}.Fields()
 	_ = deliveryFields
 	// deliveryDescCreatedAt is the schema descriptor for created_at field.
-	deliveryDescCreatedAt := deliveryFields[3].Descriptor()
+	deliveryDescCreatedAt := deliveryFields[4].Descriptor()
 	// delivery.DefaultCreatedAt holds the default value on creation for the created_at field.
 	delivery.DefaultCreatedAt = deliveryDescCreatedAt.Default.(func() time.Time)
 }

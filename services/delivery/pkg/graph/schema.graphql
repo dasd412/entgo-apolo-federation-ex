@@ -1,4 +1,6 @@
 type Mutation {
+    createDelivery(input: CreateDeliveryInput!): Delivery!
+    updateDelivery(id: ID!, input: UpdateDeliveryInput!): Delivery!
     deleteDelivery(id: ID!): Boolean!
 }
 

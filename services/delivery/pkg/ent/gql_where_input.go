@@ -37,6 +37,16 @@ type DeliveryWhereInput struct {
 	OrderIDLT    *int  `json:"orderIDLT,omitempty"`
 	OrderIDLTE   *int  `json:"orderIDLTE,omitempty"`
 
+	// "user_id" field predicates.
+	UserID      *int  `json:"userID,omitempty"`
+	UserIDNEQ   *int  `json:"userIDNEQ,omitempty"`
+	UserIDIn    []int `json:"userIDIn,omitempty"`
+	UserIDNotIn []int `json:"userIDNotIn,omitempty"`
+	UserIDGT    *int  `json:"userIDGT,omitempty"`
+	UserIDGTE   *int  `json:"userIDGTE,omitempty"`
+	UserIDLT    *int  `json:"userIDLT,omitempty"`
+	UserIDLTE   *int  `json:"userIDLTE,omitempty"`
+
 	// "status" field predicates.
 	Status      *delivery.Status  `json:"status,omitempty"`
 	StatusNEQ   *delivery.Status  `json:"statusNEQ,omitempty"`
@@ -189,6 +199,30 @@ func (i *DeliveryWhereInput) P() (predicate.Delivery, error) {
 	}
 	if i.OrderIDLTE != nil {
 		predicates = append(predicates, delivery.OrderIDLTE(*i.OrderIDLTE))
+	}
+	if i.UserID != nil {
+		predicates = append(predicates, delivery.UserIDEQ(*i.UserID))
+	}
+	if i.UserIDNEQ != nil {
+		predicates = append(predicates, delivery.UserIDNEQ(*i.UserIDNEQ))
+	}
+	if len(i.UserIDIn) > 0 {
+		predicates = append(predicates, delivery.UserIDIn(i.UserIDIn...))
+	}
+	if len(i.UserIDNotIn) > 0 {
+		predicates = append(predicates, delivery.UserIDNotIn(i.UserIDNotIn...))
+	}
+	if i.UserIDGT != nil {
+		predicates = append(predicates, delivery.UserIDGT(*i.UserIDGT))
+	}
+	if i.UserIDGTE != nil {
+		predicates = append(predicates, delivery.UserIDGTE(*i.UserIDGTE))
+	}
+	if i.UserIDLT != nil {
+		predicates = append(predicates, delivery.UserIDLT(*i.UserIDLT))
+	}
+	if i.UserIDLTE != nil {
+		predicates = append(predicates, delivery.UserIDLTE(*i.UserIDLTE))
 	}
 	if i.Status != nil {
 		predicates = append(predicates, delivery.StatusEQ(*i.Status))

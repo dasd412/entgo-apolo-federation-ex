@@ -19,6 +19,8 @@ type Delivery struct {
 	ID int `json:"id,omitempty"`
 	// OrderID holds the value of the "order_id" field.
 	OrderID int `json:"order_id,omitempty"`
+	// UserID holds the value of the "user_id" field.
+	UserID int `json:"user_id,omitempty"`
 	// Status holds the value of the "status" field.
 	Status delivery.Status `json:"status,omitempty"`
 	// TrackingNumber holds the value of the "tracking_number" field.
@@ -33,7 +35,7 @@ func (*Delivery) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case delivery.FieldID, delivery.FieldOrderID:
+		case delivery.FieldID, delivery.FieldOrderID, delivery.FieldUserID:
 			values[i] = new(sql.NullInt64)
 		case delivery.FieldStatus, delivery.FieldTrackingNumber:
 			values[i] = new(sql.NullString)
@@ -65,6 +67,12 @@ func (d *Delivery) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field order_id", values[i])
 			} else if value.Valid {
 				d.OrderID = int(value.Int64)
+			}
+		case delivery.FieldUserID:
+			if value, ok := values[i].(*sql.NullInt64); !ok {
+				return fmt.Errorf("unexpected type %T for field user_id", values[i])
+			} else if value.Valid {
+				d.UserID = int(value.Int64)
 			}
 		case delivery.FieldStatus:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -122,6 +130,9 @@ func (d *Delivery) String() string {
 	builder.WriteString(fmt.Sprintf("id=%v, ", d.ID))
 	builder.WriteString("order_id=")
 	builder.WriteString(fmt.Sprintf("%v", d.OrderID))
+	builder.WriteString(", ")
+	builder.WriteString("user_id=")
+	builder.WriteString(fmt.Sprintf("%v", d.UserID))
 	builder.WriteString(", ")
 	builder.WriteString("status=")
 	builder.WriteString(fmt.Sprintf("%v", d.Status))

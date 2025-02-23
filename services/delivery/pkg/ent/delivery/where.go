@@ -59,6 +59,11 @@ func OrderID(v int) predicate.Delivery {
 	return predicate.Delivery(sql.FieldEQ(FieldOrderID, v))
 }
 
+// UserID applies equality check predicate on the "user_id" field. It's identical to UserIDEQ.
+func UserID(v int) predicate.Delivery {
+	return predicate.Delivery(sql.FieldEQ(FieldUserID, v))
+}
+
 // TrackingNumber applies equality check predicate on the "tracking_number" field. It's identical to TrackingNumberEQ.
 func TrackingNumber(v string) predicate.Delivery {
 	return predicate.Delivery(sql.FieldEQ(FieldTrackingNumber, v))
@@ -107,6 +112,46 @@ func OrderIDLT(v int) predicate.Delivery {
 // OrderIDLTE applies the LTE predicate on the "order_id" field.
 func OrderIDLTE(v int) predicate.Delivery {
 	return predicate.Delivery(sql.FieldLTE(FieldOrderID, v))
+}
+
+// UserIDEQ applies the EQ predicate on the "user_id" field.
+func UserIDEQ(v int) predicate.Delivery {
+	return predicate.Delivery(sql.FieldEQ(FieldUserID, v))
+}
+
+// UserIDNEQ applies the NEQ predicate on the "user_id" field.
+func UserIDNEQ(v int) predicate.Delivery {
+	return predicate.Delivery(sql.FieldNEQ(FieldUserID, v))
+}
+
+// UserIDIn applies the In predicate on the "user_id" field.
+func UserIDIn(vs ...int) predicate.Delivery {
+	return predicate.Delivery(sql.FieldIn(FieldUserID, vs...))
+}
+
+// UserIDNotIn applies the NotIn predicate on the "user_id" field.
+func UserIDNotIn(vs ...int) predicate.Delivery {
+	return predicate.Delivery(sql.FieldNotIn(FieldUserID, vs...))
+}
+
+// UserIDGT applies the GT predicate on the "user_id" field.
+func UserIDGT(v int) predicate.Delivery {
+	return predicate.Delivery(sql.FieldGT(FieldUserID, v))
+}
+
+// UserIDGTE applies the GTE predicate on the "user_id" field.
+func UserIDGTE(v int) predicate.Delivery {
+	return predicate.Delivery(sql.FieldGTE(FieldUserID, v))
+}
+
+// UserIDLT applies the LT predicate on the "user_id" field.
+func UserIDLT(v int) predicate.Delivery {
+	return predicate.Delivery(sql.FieldLT(FieldUserID, v))
+}
+
+// UserIDLTE applies the LTE predicate on the "user_id" field.
+func UserIDLTE(v int) predicate.Delivery {
+	return predicate.Delivery(sql.FieldLTE(FieldUserID, v))
 }
 
 // StatusEQ applies the EQ predicate on the "status" field.

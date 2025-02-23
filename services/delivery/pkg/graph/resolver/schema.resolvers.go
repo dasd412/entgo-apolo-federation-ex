@@ -8,17 +8,29 @@ import (
 	"context"
 	"delivery/pkg/ent"
 	"delivery/pkg/graph/gen"
-	"fmt"
 )
+
+// CreateDelivery is the resolver for the createDelivery field.
+func (r *mutationResolver) CreateDelivery(ctx context.Context, input ent.CreateDeliveryInput) (*ent.Delivery, error) {
+	entClient := ent.FromContext(ctx)
+	return r.deliveryService.CreateDelivery(ctx, entClient, input)
+}
+
+// UpdateDelivery is the resolver for the updateDelivery field.
+func (r *mutationResolver) UpdateDelivery(ctx context.Context, id int, input ent.UpdateDeliveryInput) (*ent.Delivery, error) {
+	entClient := ent.FromContext(ctx)
+	return r.deliveryService.UpdateDelivery(ctx, entClient, id, input)
+}
 
 // DeleteDelivery is the resolver for the deleteDelivery field.
 func (r *mutationResolver) DeleteDelivery(ctx context.Context, id int) (bool, error) {
-	panic(fmt.Errorf("not implemented: DeleteDelivery - deleteDelivery"))
+	entClient := ent.FromContext(ctx)
+	return r.deliveryService.DeleteDelivery(ctx, entClient, id)
 }
 
 // Delivery is the resolver for the delivery field.
 func (r *queryResolver) Delivery(ctx context.Context, id int) (*ent.Delivery, error) {
-	panic(fmt.Errorf("not implemented: Delivery - delivery"))
+	return r.deliveryService.FindDelivery(ctx, r.entClient, id)
 }
 
 // Mutation returns gen.MutationResolver implementation.

@@ -35,6 +35,11 @@ func (d *DeliveryQuery) collectField(ctx context.Context, oneNode bool, opCtx *g
 				selectedFields = append(selectedFields, delivery.FieldOrderID)
 				fieldSeen[delivery.FieldOrderID] = struct{}{}
 			}
+		case "userID":
+			if _, ok := fieldSeen[delivery.FieldUserID]; !ok {
+				selectedFields = append(selectedFields, delivery.FieldUserID)
+				fieldSeen[delivery.FieldUserID] = struct{}{}
+			}
 		case "status":
 			if _, ok := fieldSeen[delivery.FieldStatus]; !ok {
 				selectedFields = append(selectedFields, delivery.FieldStatus)

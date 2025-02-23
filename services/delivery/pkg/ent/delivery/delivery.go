@@ -18,6 +18,8 @@ const (
 	FieldID = "id"
 	// FieldOrderID holds the string denoting the order_id field in the database.
 	FieldOrderID = "order_id"
+	// FieldUserID holds the string denoting the user_id field in the database.
+	FieldUserID = "user_id"
 	// FieldStatus holds the string denoting the status field in the database.
 	FieldStatus = "status"
 	// FieldTrackingNumber holds the string denoting the tracking_number field in the database.
@@ -32,6 +34,7 @@ const (
 var Columns = []string{
 	FieldID,
 	FieldOrderID,
+	FieldUserID,
 	FieldStatus,
 	FieldTrackingNumber,
 	FieldCreatedAt,
@@ -87,6 +90,11 @@ func ByID(opts ...sql.OrderTermOption) OrderOption {
 // ByOrderID orders the results by the order_id field.
 func ByOrderID(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldOrderID, opts...).ToFunc()
+}
+
+// ByUserID orders the results by the user_id field.
+func ByUserID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldUserID, opts...).ToFunc()
 }
 
 // ByStatus orders the results by the status field.

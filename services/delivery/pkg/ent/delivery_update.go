@@ -49,6 +49,27 @@ func (du *DeliveryUpdate) AddOrderID(i int) *DeliveryUpdate {
 	return du
 }
 
+// SetUserID sets the "user_id" field.
+func (du *DeliveryUpdate) SetUserID(i int) *DeliveryUpdate {
+	du.mutation.ResetUserID()
+	du.mutation.SetUserID(i)
+	return du
+}
+
+// SetNillableUserID sets the "user_id" field if the given value is not nil.
+func (du *DeliveryUpdate) SetNillableUserID(i *int) *DeliveryUpdate {
+	if i != nil {
+		du.SetUserID(*i)
+	}
+	return du
+}
+
+// AddUserID adds i to the "user_id" field.
+func (du *DeliveryUpdate) AddUserID(i int) *DeliveryUpdate {
+	du.mutation.AddUserID(i)
+	return du
+}
+
 // SetStatus sets the "status" field.
 func (du *DeliveryUpdate) SetStatus(d delivery.Status) *DeliveryUpdate {
 	du.mutation.SetStatus(d)
@@ -157,6 +178,12 @@ func (du *DeliveryUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	if value, ok := du.mutation.AddedOrderID(); ok {
 		_spec.AddField(delivery.FieldOrderID, field.TypeInt, value)
 	}
+	if value, ok := du.mutation.UserID(); ok {
+		_spec.SetField(delivery.FieldUserID, field.TypeInt, value)
+	}
+	if value, ok := du.mutation.AddedUserID(); ok {
+		_spec.AddField(delivery.FieldUserID, field.TypeInt, value)
+	}
 	if value, ok := du.mutation.Status(); ok {
 		_spec.SetField(delivery.FieldStatus, field.TypeEnum, value)
 	}
@@ -207,6 +234,27 @@ func (duo *DeliveryUpdateOne) SetNillableOrderID(i *int) *DeliveryUpdateOne {
 // AddOrderID adds i to the "order_id" field.
 func (duo *DeliveryUpdateOne) AddOrderID(i int) *DeliveryUpdateOne {
 	duo.mutation.AddOrderID(i)
+	return duo
+}
+
+// SetUserID sets the "user_id" field.
+func (duo *DeliveryUpdateOne) SetUserID(i int) *DeliveryUpdateOne {
+	duo.mutation.ResetUserID()
+	duo.mutation.SetUserID(i)
+	return duo
+}
+
+// SetNillableUserID sets the "user_id" field if the given value is not nil.
+func (duo *DeliveryUpdateOne) SetNillableUserID(i *int) *DeliveryUpdateOne {
+	if i != nil {
+		duo.SetUserID(*i)
+	}
+	return duo
+}
+
+// AddUserID adds i to the "user_id" field.
+func (duo *DeliveryUpdateOne) AddUserID(i int) *DeliveryUpdateOne {
+	duo.mutation.AddUserID(i)
 	return duo
 }
 
@@ -347,6 +395,12 @@ func (duo *DeliveryUpdateOne) sqlSave(ctx context.Context) (_node *Delivery, err
 	}
 	if value, ok := duo.mutation.AddedOrderID(); ok {
 		_spec.AddField(delivery.FieldOrderID, field.TypeInt, value)
+	}
+	if value, ok := duo.mutation.UserID(); ok {
+		_spec.SetField(delivery.FieldUserID, field.TypeInt, value)
+	}
+	if value, ok := duo.mutation.AddedUserID(); ok {
+		_spec.AddField(delivery.FieldUserID, field.TypeInt, value)
 	}
 	if value, ok := duo.mutation.Status(); ok {
 		_spec.SetField(delivery.FieldStatus, field.TypeEnum, value)

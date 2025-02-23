@@ -26,6 +26,12 @@ func (dc *DeliveryCreate) SetOrderID(i int) *DeliveryCreate {
 	return dc
 }
 
+// SetUserID sets the "user_id" field.
+func (dc *DeliveryCreate) SetUserID(i int) *DeliveryCreate {
+	dc.mutation.SetUserID(i)
+	return dc
+}
+
 // SetStatus sets the "status" field.
 func (dc *DeliveryCreate) SetStatus(d delivery.Status) *DeliveryCreate {
 	dc.mutation.SetStatus(d)
@@ -106,6 +112,9 @@ func (dc *DeliveryCreate) check() error {
 	if _, ok := dc.mutation.OrderID(); !ok {
 		return &ValidationError{Name: "order_id", err: errors.New(`ent: missing required field "Delivery.order_id"`)}
 	}
+	if _, ok := dc.mutation.UserID(); !ok {
+		return &ValidationError{Name: "user_id", err: errors.New(`ent: missing required field "Delivery.user_id"`)}
+	}
 	if _, ok := dc.mutation.Status(); !ok {
 		return &ValidationError{Name: "status", err: errors.New(`ent: missing required field "Delivery.status"`)}
 	}
@@ -146,6 +155,10 @@ func (dc *DeliveryCreate) createSpec() (*Delivery, *sqlgraph.CreateSpec) {
 	if value, ok := dc.mutation.OrderID(); ok {
 		_spec.SetField(delivery.FieldOrderID, field.TypeInt, value)
 		_node.OrderID = value
+	}
+	if value, ok := dc.mutation.UserID(); ok {
+		_spec.SetField(delivery.FieldUserID, field.TypeInt, value)
+		_node.UserID = value
 	}
 	if value, ok := dc.mutation.Status(); ok {
 		_spec.SetField(delivery.FieldStatus, field.TypeEnum, value)

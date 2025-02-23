@@ -35,6 +35,8 @@ type DeliveryMutation struct {
 	id              *int
 	order_id        *int
 	addorder_id     *int
+	user_id         *int
+	adduser_id      *int
 	status          *delivery.Status
 	tracking_number *string
 	created_at      *time.Time
@@ -198,6 +200,62 @@ func (m *DeliveryMutation) ResetOrderID() {
 	m.addorder_id = nil
 }
 
+// SetUserID sets the "user_id" field.
+func (m *DeliveryMutation) SetUserID(i int) {
+	m.user_id = &i
+	m.adduser_id = nil
+}
+
+// UserID returns the value of the "user_id" field in the mutation.
+func (m *DeliveryMutation) UserID() (r int, exists bool) {
+	v := m.user_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUserID returns the old "user_id" field's value of the Delivery entity.
+// If the Delivery object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DeliveryMutation) OldUserID(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUserID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUserID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUserID: %w", err)
+	}
+	return oldValue.UserID, nil
+}
+
+// AddUserID adds i to the "user_id" field.
+func (m *DeliveryMutation) AddUserID(i int) {
+	if m.adduser_id != nil {
+		*m.adduser_id += i
+	} else {
+		m.adduser_id = &i
+	}
+}
+
+// AddedUserID returns the value that was added to the "user_id" field in this mutation.
+func (m *DeliveryMutation) AddedUserID() (r int, exists bool) {
+	v := m.adduser_id
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetUserID resets all changes to the "user_id" field.
+func (m *DeliveryMutation) ResetUserID() {
+	m.user_id = nil
+	m.adduser_id = nil
+}
+
 // SetStatus sets the "status" field.
 func (m *DeliveryMutation) SetStatus(d delivery.Status) {
 	m.status = &d
@@ -353,9 +411,12 @@ func (m *DeliveryMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *DeliveryMutation) Fields() []string {
-	fields := make([]string, 0, 4)
+	fields := make([]string, 0, 5)
 	if m.order_id != nil {
 		fields = append(fields, delivery.FieldOrderID)
+	}
+	if m.user_id != nil {
+		fields = append(fields, delivery.FieldUserID)
 	}
 	if m.status != nil {
 		fields = append(fields, delivery.FieldStatus)
@@ -376,6 +437,8 @@ func (m *DeliveryMutation) Field(name string) (ent.Value, bool) {
 	switch name {
 	case delivery.FieldOrderID:
 		return m.OrderID()
+	case delivery.FieldUserID:
+		return m.UserID()
 	case delivery.FieldStatus:
 		return m.Status()
 	case delivery.FieldTrackingNumber:
@@ -393,6 +456,8 @@ func (m *DeliveryMutation) OldField(ctx context.Context, name string) (ent.Value
 	switch name {
 	case delivery.FieldOrderID:
 		return m.OldOrderID(ctx)
+	case delivery.FieldUserID:
+		return m.OldUserID(ctx)
 	case delivery.FieldStatus:
 		return m.OldStatus(ctx)
 	case delivery.FieldTrackingNumber:
@@ -414,6 +479,13 @@ func (m *DeliveryMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetOrderID(v)
+		return nil
+	case delivery.FieldUserID:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUserID(v)
 		return nil
 	case delivery.FieldStatus:
 		v, ok := value.(delivery.Status)
@@ -447,6 +519,9 @@ func (m *DeliveryMutation) AddedFields() []string {
 	if m.addorder_id != nil {
 		fields = append(fields, delivery.FieldOrderID)
 	}
+	if m.adduser_id != nil {
+		fields = append(fields, delivery.FieldUserID)
+	}
 	return fields
 }
 
@@ -457,6 +532,8 @@ func (m *DeliveryMutation) AddedField(name string) (ent.Value, bool) {
 	switch name {
 	case delivery.FieldOrderID:
 		return m.AddedOrderID()
+	case delivery.FieldUserID:
+		return m.AddedUserID()
 	}
 	return nil, false
 }
@@ -472,6 +549,13 @@ func (m *DeliveryMutation) AddField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.AddOrderID(v)
+		return nil
+	case delivery.FieldUserID:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddUserID(v)
 		return nil
 	}
 	return fmt.Errorf("unknown Delivery numeric field %s", name)
@@ -511,6 +595,9 @@ func (m *DeliveryMutation) ResetField(name string) error {
 	switch name {
 	case delivery.FieldOrderID:
 		m.ResetOrderID()
+		return nil
+	case delivery.FieldUserID:
+		m.ResetUserID()
 		return nil
 	case delivery.FieldStatus:
 		m.ResetStatus()

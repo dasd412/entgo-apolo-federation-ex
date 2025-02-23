@@ -10,6 +10,7 @@ import (
 // CreateDeliveryInput represents a mutation input for creating deliveries.
 type CreateDeliveryInput struct {
 	OrderID        int
+	UserID         int
 	Status         delivery.Status
 	TrackingNumber *string
 	CreatedAt      *time.Time
@@ -18,6 +19,7 @@ type CreateDeliveryInput struct {
 // Mutate applies the CreateDeliveryInput on the DeliveryMutation builder.
 func (i *CreateDeliveryInput) Mutate(m *DeliveryMutation) {
 	m.SetOrderID(i.OrderID)
+	m.SetUserID(i.UserID)
 	m.SetStatus(i.Status)
 	if v := i.TrackingNumber; v != nil {
 		m.SetTrackingNumber(*v)
@@ -36,6 +38,7 @@ func (c *DeliveryCreate) SetInput(i CreateDeliveryInput) *DeliveryCreate {
 // UpdateDeliveryInput represents a mutation input for updating deliveries.
 type UpdateDeliveryInput struct {
 	OrderID             *int
+	UserID              *int
 	Status              *delivery.Status
 	ClearTrackingNumber bool
 	TrackingNumber      *string
@@ -46,6 +49,9 @@ type UpdateDeliveryInput struct {
 func (i *UpdateDeliveryInput) Mutate(m *DeliveryMutation) {
 	if v := i.OrderID; v != nil {
 		m.SetOrderID(*v)
+	}
+	if v := i.UserID; v != nil {
+		m.SetUserID(*v)
 	}
 	if v := i.Status; v != nil {
 		m.SetStatus(*v)
