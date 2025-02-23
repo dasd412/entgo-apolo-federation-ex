@@ -62,6 +62,7 @@ type ComplexityRoot struct {
 
 	Entity struct {
 		FindDeliveryByID func(childComplexity int, id int) int
+		FindOrderByID    func(childComplexity int, id int) int
 		FindUserByID     func(childComplexity int, id int) int
 	}
 
@@ -69,6 +70,11 @@ type ComplexityRoot struct {
 		CreateDelivery func(childComplexity int, input ent.CreateDeliveryInput) int
 		DeleteDelivery func(childComplexity int, id int) int
 		UpdateDelivery func(childComplexity int, id int, input ent.UpdateDeliveryInput) int
+	}
+
+	Order struct {
+		Delivery func(childComplexity int) int
+		ID       func(childComplexity int) int
 	}
 
 	Query struct {
@@ -89,6 +95,7 @@ type ComplexityRoot struct {
 
 type EntityResolver interface {
 	FindDeliveryByID(ctx context.Context, id int) (*ent.Delivery, error)
+	FindOrderByID(ctx context.Context, id int) (*graphqlmodel.Order, error)
 	FindUserByID(ctx context.Context, id int) (*graphqlmodel.User, error)
 }
 type MutationResolver interface {
@@ -173,6 +180,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Entity.FindDeliveryByID(childComplexity, args["id"].(int)), true
 
+	case "Entity.findOrderByID":
+		if e.complexity.Entity.FindOrderByID == nil {
+			break
+		}
+
+		args, err := ec.field_Entity_findOrderByID_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Entity.FindOrderByID(childComplexity, args["id"].(int)), true
+
 	case "Entity.findUserByID":
 		if e.complexity.Entity.FindUserByID == nil {
 			break
@@ -220,6 +239,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Mutation.UpdateDelivery(childComplexity, args["id"].(int), args["input"].(ent.UpdateDeliveryInput)), true
+
+	case "Order.delivery":
+		if e.complexity.Order.Delivery == nil {
+			break
+		}
+
+		return e.complexity.Order.Delivery(childComplexity), true
+
+	case "Order.id":
+		if e.complexity.Order.ID == nil {
+			break
+		}
+
+		return e.complexity.Order.ID(childComplexity), true
 
 	case "Query.delivery":
 		if e.complexity.Query.Delivery == nil {
@@ -520,9 +553,13 @@ input UpdateDeliveryInput {
 `, BuiltIn: false},
 	{Name: "../extended.graphql", Input: `extend type User@key(fields:"id"){
     id:ID!
-    deliveries:[Delivery!]!
+    deliveries:[Delivery]
 }
-`, BuiltIn: false},
+
+extend type Order @key(fields:"id"){
+    id:ID! @external
+    delivery:Delivery
+}`, BuiltIn: false},
 	{Name: "../schema.graphql", Input: `type Mutation {
     createDelivery(input: CreateDeliveryInput!): Delivery!
     updateDelivery(id: ID!, input: UpdateDeliveryInput!): Delivery!
@@ -543,11 +580,12 @@ extend type Query {
 `, BuiltIn: true},
 	{Name: "../federation/entity.graphql", Input: `
 # a union of all types that use the @key directive
-union _Entity = Delivery | User
+union _Entity = Delivery | Order | User
 
 # fake type to build resolver interfaces for users to implement
 type Entity {
 	findDeliveryByID(id: ID!,): Delivery!
+	findOrderByID(id: ID!,): Order!
 	findUserByID(id: ID!,): User!
 }
 
@@ -578,6 +616,34 @@ func (ec *executionContext) field_Entity_findDeliveryByID_args(ctx context.Conte
 	return args, nil
 }
 func (ec *executionContext) field_Entity_findDeliveryByID_argsID(
+	ctx context.Context,
+	rawArgs map[string]any,
+) (int, error) {
+	if _, ok := rawArgs["id"]; !ok {
+		var zeroVal int
+		return zeroVal, nil
+	}
+
+	ctx = graphql.WithPathContext(ctx, graphql.NewPathWithField("id"))
+	if tmp, ok := rawArgs["id"]; ok {
+		return ec.unmarshalNID2int(ctx, tmp)
+	}
+
+	var zeroVal int
+	return zeroVal, nil
+}
+
+func (ec *executionContext) field_Entity_findOrderByID_args(ctx context.Context, rawArgs map[string]any) (map[string]any, error) {
+	var err error
+	args := map[string]any{}
+	arg0, err := ec.field_Entity_findOrderByID_argsID(ctx, rawArgs)
+	if err != nil {
+		return nil, err
+	}
+	args["id"] = arg0
+	return args, nil
+}
+func (ec *executionContext) field_Entity_findOrderByID_argsID(
 	ctx context.Context,
 	rawArgs map[string]any,
 ) (int, error) {
@@ -1264,6 +1330,67 @@ func (ec *executionContext) fieldContext_Entity_findDeliveryByID(ctx context.Con
 	return fc, nil
 }
 
+func (ec *executionContext) _Entity_findOrderByID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Entity_findOrderByID(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Entity().FindOrderByID(rctx, fc.Args["id"].(int))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*graphqlmodel.Order)
+	fc.Result = res
+	return ec.marshalNOrder2ᚖdeliveryᚋpkgᚋgraphᚋgenᚋgraphqlmodelᚐOrder(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Entity_findOrderByID(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Entity",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Order_id(ctx, field)
+			case "delivery":
+				return ec.fieldContext_Order_delivery(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Order", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Entity_findOrderByID_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return fc, err
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Entity_findUserByID(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Entity_findUserByID(ctx, field)
 	if err != nil {
@@ -1514,6 +1641,105 @@ func (ec *executionContext) fieldContext_Mutation_deleteDelivery(ctx context.Con
 	if fc.Args, err = ec.field_Mutation_deleteDelivery_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return fc, err
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Order_id(ctx context.Context, field graphql.CollectedField, obj *graphqlmodel.Order) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Order_id(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(int)
+	fc.Result = res
+	return ec.marshalNID2int(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Order_id(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Order",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type ID does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Order_delivery(ctx context.Context, field graphql.CollectedField, obj *graphqlmodel.Order) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Order_delivery(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (any, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Delivery, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*ent.Delivery)
+	fc.Result = res
+	return ec.marshalODelivery2ᚖdeliveryᚋpkgᚋentᚐDelivery(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Order_delivery(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Order",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "id":
+				return ec.fieldContext_Delivery_id(ctx, field)
+			case "orderID":
+				return ec.fieldContext_Delivery_orderID(ctx, field)
+			case "userID":
+				return ec.fieldContext_Delivery_userID(ctx, field)
+			case "status":
+				return ec.fieldContext_Delivery_status(ctx, field)
+			case "trackingNumber":
+				return ec.fieldContext_Delivery_trackingNumber(ctx, field)
+			case "createdAt":
+				return ec.fieldContext_Delivery_createdAt(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Delivery", field.Name)
+		},
 	}
 	return fc, nil
 }
@@ -1886,14 +2112,11 @@ func (ec *executionContext) _User_deliveries(ctx context.Context, field graphql.
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.([]*ent.Delivery)
 	fc.Result = res
-	return ec.marshalNDelivery2ᚕᚖdeliveryᚋpkgᚋentᚐDeliveryᚄ(ctx, field.Selections, res)
+	return ec.marshalODelivery2ᚕᚖdeliveryᚋpkgᚋentᚐDelivery(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_User_deliveries(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4445,6 +4668,13 @@ func (ec *executionContext) __Entity(ctx context.Context, sel ast.SelectionSet, 
 			return graphql.Null
 		}
 		return ec._Delivery(ctx, sel, obj)
+	case graphqlmodel.Order:
+		return ec._Order(ctx, sel, &obj)
+	case *graphqlmodel.Order:
+		if obj == nil {
+			return graphql.Null
+		}
+		return ec._Order(ctx, sel, obj)
 	case graphqlmodel.User:
 		return ec._User(ctx, sel, &obj)
 	case *graphqlmodel.User:
@@ -4563,6 +4793,28 @@ func (ec *executionContext) _Entity(ctx context.Context, sel ast.SelectionSet) g
 			}
 
 			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
+		case "findOrderByID":
+			field := field
+
+			innerFunc := func(ctx context.Context, fs *graphql.FieldSet) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Entity_findOrderByID(ctx, field)
+				if res == graphql.Null {
+					atomic.AddUint32(&fs.Invalids, 1)
+				}
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx,
+					func(ctx context.Context) graphql.Marshaler { return innerFunc(ctx, out) })
+			}
+
+			out.Concurrently(i, func(ctx context.Context) graphql.Marshaler { return rrm(innerCtx) })
 		case "findUserByID":
 			field := field
 
@@ -4648,6 +4900,47 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 			if out.Values[i] == graphql.Null {
 				out.Invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch(ctx)
+	if out.Invalids > 0 {
+		return graphql.Null
+	}
+
+	atomic.AddInt32(&ec.deferred, int32(len(deferred)))
+
+	for label, dfs := range deferred {
+		ec.processDeferredGroup(graphql.DeferredGroup{
+			Label:    label,
+			Path:     graphql.GetPath(ctx),
+			FieldSet: dfs,
+			Context:  ctx,
+		})
+	}
+
+	return out
+}
+
+var orderImplementors = []string{"Order", "_Entity"}
+
+func (ec *executionContext) _Order(ctx context.Context, sel ast.SelectionSet, obj *graphqlmodel.Order) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, orderImplementors)
+
+	out := graphql.NewFieldSet(fields)
+	deferred := make(map[string]*graphql.FieldSet)
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("Order")
+		case "id":
+			out.Values[i] = ec._Order_id(ctx, field, obj)
+			if out.Values[i] == graphql.Null {
+				out.Invalids++
+			}
+		case "delivery":
+			out.Values[i] = ec._Order_delivery(ctx, field, obj)
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -4805,9 +5098,6 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "deliveries":
 			out.Values[i] = ec._User_deliveries(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5226,50 +5516,6 @@ func (ec *executionContext) marshalNDelivery2deliveryᚋpkgᚋentᚐDelivery(ctx
 	return ec._Delivery(ctx, sel, &v)
 }
 
-func (ec *executionContext) marshalNDelivery2ᚕᚖdeliveryᚋpkgᚋentᚐDeliveryᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Delivery) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNDelivery2ᚖdeliveryᚋpkgᚋentᚐDelivery(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
-}
-
 func (ec *executionContext) marshalNDelivery2ᚖdeliveryᚋpkgᚋentᚐDelivery(ctx context.Context, sel ast.SelectionSet, v *ent.Delivery) graphql.Marshaler {
 	if v == nil {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
@@ -5323,6 +5569,20 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 		}
 	}
 	return res
+}
+
+func (ec *executionContext) marshalNOrder2deliveryᚋpkgᚋgraphᚋgenᚋgraphqlmodelᚐOrder(ctx context.Context, sel ast.SelectionSet, v graphqlmodel.Order) graphql.Marshaler {
+	return ec._Order(ctx, sel, &v)
+}
+
+func (ec *executionContext) marshalNOrder2ᚖdeliveryᚋpkgᚋgraphᚋgenᚋgraphqlmodelᚐOrder(ctx context.Context, sel ast.SelectionSet, v *graphqlmodel.Order) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Order(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v any) (string, error) {
@@ -5761,6 +6021,54 @@ func (ec *executionContext) marshalOBoolean2ᚖbool(ctx context.Context, sel ast
 	}
 	res := graphql.MarshalBoolean(*v)
 	return res
+}
+
+func (ec *executionContext) marshalODelivery2ᚕᚖdeliveryᚋpkgᚋentᚐDelivery(ctx context.Context, sel ast.SelectionSet, v []*ent.Delivery) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalODelivery2ᚖdeliveryᚋpkgᚋentᚐDelivery(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalODelivery2ᚖdeliveryᚋpkgᚋentᚐDelivery(ctx context.Context, sel ast.SelectionSet, v *ent.Delivery) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Delivery(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalODeliveryStatus2ᚕdeliveryᚋpkgᚋentᚋdeliveryᚐStatusᚄ(ctx context.Context, v any) ([]delivery.Status, error) {

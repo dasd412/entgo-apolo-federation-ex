@@ -1,4 +1,9 @@
 extend type User@key(fields:"id"){
     id:ID!
-    deliveries:[Delivery!]!
+    deliveries:[Delivery]
+}
+
+extend type Order @key(fields:"id"){
+    id:ID! @external
+    delivery:Delivery
 }

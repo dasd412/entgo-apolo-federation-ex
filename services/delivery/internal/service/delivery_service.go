@@ -23,10 +23,10 @@ type (
 			ctx context.Context,
 			client *ent.Client,
 			userId int) ([]*ent.Delivery, error)
-		FindDeliveriesByOrderId(
+		FindDeliveryByOrderId(
 			ctx context.Context,
 			client *ent.Client,
-			orderId int) ([]*ent.Delivery, error)
+			orderId int) (*ent.Delivery, error)
 		Paginate(
 			ctx context.Context,
 			client *ent.Client,
@@ -80,12 +80,11 @@ func (s *deliveryService) FindDeliveriesByUserId(ctx context.Context, client *en
 	)
 }
 
-func (s *deliveryService) FindDeliveriesByOrderId(ctx context.Context, client *ent.Client, orderId int) ([]*ent.Delivery, error) {
-	return s.deliveryRepository.FindAll(
+func (s *deliveryService) FindDeliveryByOrderId(ctx context.Context, client *ent.Client, orderId int) (*ent.Delivery, error) {
+	return s.deliveryRepository.FindOne(
 		ctx, client, func(query *ent.DeliveryQuery) {
 			query.Where(delivery.OrderID(orderId))
-		},
-	)
+		})
 }
 
 func (s *deliveryService) Paginate(ctx context.Context, client *ent.Client, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, where *ent.DeliveryWhereInput) (*ent.DeliveryConnection, error) {

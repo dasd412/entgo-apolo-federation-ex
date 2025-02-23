@@ -6,9 +6,16 @@ import (
 	"delivery/pkg/ent"
 )
 
+type Order struct {
+	ID       int           `json:"id"`
+	Delivery *ent.Delivery `json:"delivery,omitempty"`
+}
+
+func (Order) IsEntity() {}
+
 type User struct {
 	ID         int             `json:"id"`
-	Deliveries []*ent.Delivery `json:"deliveries"`
+	Deliveries []*ent.Delivery `json:"deliveries,omitempty"`
 }
 
 func (User) IsEntity() {}

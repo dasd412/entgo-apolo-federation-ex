@@ -491,7 +491,7 @@ input UpdateOrderInput {
 `, BuiltIn: false},
 	{Name: "../extended.graphql", Input: `extend type User@key(fields:"id"){
     id:ID! @external
-    orders:[Order!]!
+    orders:[Order]
 }
 `, BuiltIn: false},
 	{Name: "../schema.graphql", Input: `type Mutation {
@@ -1850,14 +1850,11 @@ func (ec *executionContext) _User_orders(ctx context.Context, field graphql.Coll
 		return graphql.Null
 	}
 	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
 		return graphql.Null
 	}
 	res := resTmp.([]*ent.Order)
 	fc.Result = res
-	return ec.marshalNOrder2ᚕᚖorderᚋpkgᚋentᚐOrderᚄ(ctx, field.Selections, res)
+	return ec.marshalOOrder2ᚕᚖorderᚋpkgᚋentᚐOrder(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_User_orders(_ context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -4639,9 +4636,6 @@ func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj
 			}
 		case "orders":
 			out.Values[i] = ec._User_orders(ctx, field, obj)
-			if out.Values[i] == graphql.Null {
-				out.Invalids++
-			}
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5118,50 +5112,6 @@ func (ec *executionContext) marshalNInt2int(ctx context.Context, sel ast.Selecti
 
 func (ec *executionContext) marshalNOrder2orderᚋpkgᚋentᚐOrder(ctx context.Context, sel ast.SelectionSet, v ent.Order) graphql.Marshaler {
 	return ec._Order(ctx, sel, &v)
-}
-
-func (ec *executionContext) marshalNOrder2ᚕᚖorderᚋpkgᚋentᚐOrderᚄ(ctx context.Context, sel ast.SelectionSet, v []*ent.Order) graphql.Marshaler {
-	ret := make(graphql.Array, len(v))
-	var wg sync.WaitGroup
-	isLen1 := len(v) == 1
-	if !isLen1 {
-		wg.Add(len(v))
-	}
-	for i := range v {
-		i := i
-		fc := &graphql.FieldContext{
-			Index:  &i,
-			Result: &v[i],
-		}
-		ctx := graphql.WithFieldContext(ctx, fc)
-		f := func(i int) {
-			defer func() {
-				if r := recover(); r != nil {
-					ec.Error(ctx, ec.Recover(ctx, r))
-					ret = nil
-				}
-			}()
-			if !isLen1 {
-				defer wg.Done()
-			}
-			ret[i] = ec.marshalNOrder2ᚖorderᚋpkgᚋentᚐOrder(ctx, sel, v[i])
-		}
-		if isLen1 {
-			f(i)
-		} else {
-			go f(i)
-		}
-
-	}
-	wg.Wait()
-
-	for _, e := range ret {
-		if e == graphql.Null {
-			return graphql.Null
-		}
-	}
-
-	return ret
 }
 
 func (ec *executionContext) marshalNOrder2ᚖorderᚋpkgᚋentᚐOrder(ctx context.Context, sel ast.SelectionSet, v *ent.Order) graphql.Marshaler {
@@ -5930,6 +5880,54 @@ func (ec *executionContext) marshalOInt2ᚖint(ctx context.Context, sel ast.Sele
 	}
 	res := graphql.MarshalInt(*v)
 	return res
+}
+
+func (ec *executionContext) marshalOOrder2ᚕᚖorderᚋpkgᚋentᚐOrder(ctx context.Context, sel ast.SelectionSet, v []*ent.Order) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	ret := make(graphql.Array, len(v))
+	var wg sync.WaitGroup
+	isLen1 := len(v) == 1
+	if !isLen1 {
+		wg.Add(len(v))
+	}
+	for i := range v {
+		i := i
+		fc := &graphql.FieldContext{
+			Index:  &i,
+			Result: &v[i],
+		}
+		ctx := graphql.WithFieldContext(ctx, fc)
+		f := func(i int) {
+			defer func() {
+				if r := recover(); r != nil {
+					ec.Error(ctx, ec.Recover(ctx, r))
+					ret = nil
+				}
+			}()
+			if !isLen1 {
+				defer wg.Done()
+			}
+			ret[i] = ec.marshalOOrder2ᚖorderᚋpkgᚋentᚐOrder(ctx, sel, v[i])
+		}
+		if isLen1 {
+			f(i)
+		} else {
+			go f(i)
+		}
+
+	}
+	wg.Wait()
+
+	return ret
+}
+
+func (ec *executionContext) marshalOOrder2ᚖorderᚋpkgᚋentᚐOrder(ctx context.Context, sel ast.SelectionSet, v *ent.Order) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Order(ctx, sel, v)
 }
 
 func (ec *executionContext) unmarshalOOrderStatus2ᚕorderᚋpkgᚋentᚋorderᚐStatusᚄ(ctx context.Context, v any) ([]order.Status, error) {

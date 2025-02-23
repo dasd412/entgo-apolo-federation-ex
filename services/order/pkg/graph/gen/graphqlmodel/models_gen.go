@@ -8,7 +8,7 @@ import (
 
 type User struct {
 	ID     int          `json:"id"`
-	Orders []*ent.Order `json:"orders"`
+	Orders []*ent.Order `json:"orders,omitempty"`
 }
 
 func (User) IsEntity() {}
