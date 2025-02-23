@@ -23,26 +23,3 @@ func keyDirective(fields string) entgql.Directive {
 
 	return entgql.NewDirective("key", args...)
 }
-
-func GraphExternalDirective() entgql.Annotation {
-	return entgql.Directives(entgql.NewDirective("external"))
-}
-
-func GraphProvidesDirective(fields string) entgql.Annotation {
-	return entgql.Directives(providesDirective(fields))
-}
-
-func providesDirective(fields string) entgql.Directive {
-	var args []*ast.Argument
-	if fields != "" {
-		args = append(args, &ast.Argument{
-			Name: "fields",
-			Value: &ast.Value{
-				Raw:  fields,
-				Kind: ast.StringValue,
-			},
-		})
-	}
-
-	return entgql.NewDirective("provides", args...)
-}

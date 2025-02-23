@@ -3,20 +3,21 @@
 package main
 
 import (
-	"log"
-
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent/entc"
 	"entgo.io/ent/entc/gen"
+	"federation"
+	"log"
 )
 
 func main() {
 	ex, err := entgql.NewExtension(
 		entgql.WithSchemaGenerator(),
 		entgql.WithWhereInputs(true),
-		entgql.WithRelaySpec(false),
+		entgql.WithRelaySpec(true),
 		entgql.WithConfigPath("../graph/gqlgen.yml"),
 		entgql.WithSchemaPath("../graph/ent.graphql"),
+		entgql.WithSchemaHook(federation.RemoveNodeGoModel, federation.RemoveNodeQueries, federation.SetPageInfoShareable),
 	)
 	if err != nil {
 		log.Fatalf("creating entgql extension: %v", err)
