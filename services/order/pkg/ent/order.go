@@ -24,8 +24,33 @@ type Order struct {
 	// TotalPrice holds the value of the "total_price" field.
 	TotalPrice float64 `json:"total_price,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
-	CreatedAt    time.Time `json:"created_at,omitempty"`
+	CreatedAt time.Time `json:"created_at,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the OrderQuery when eager-loading is set.
+	Edges        OrderEdges `json:"edges"`
 	selectValues sql.SelectValues
+}
+
+// OrderEdges holds the relations/edges for other nodes in the graph.
+type OrderEdges struct {
+	// OrderItem holds the value of the order_item edge.
+	OrderItem []*OrderItem `json:"order_item,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+	// totalCount holds the count of the edges above.
+	totalCount [1]map[string]int
+
+	namedOrderItem map[string][]*OrderItem
+}
+
+// OrderItemOrErr returns the OrderItem value or an error if the edge
+// was not loaded in eager-loading.
+func (e OrderEdges) OrderItemOrErr() ([]*OrderItem, error) {
+	if e.loadedTypes[0] {
+		return e.OrderItem, nil
+	}
+	return nil, &NotLoadedError{edge: "order_item"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -99,6 +124,11 @@ func (o *Order) Value(name string) (ent.Value, error) {
 	return o.selectValues.Get(name)
 }
 
+// QueryOrderItem queries the "order_item" edge of the Order entity.
+func (o *Order) QueryOrderItem() *OrderItemQuery {
+	return NewOrderClient(o.config).QueryOrderItem(o)
+}
+
 // Update returns a builder for updating this Order.
 // Note that you need to call Order.Unwrap() before calling this method if this Order
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -139,6 +169,30 @@ func (o *Order) String() string {
 
 // IsEntity implement fedruntime.Entity
 func (o Order) IsEntity() {}
+
+// NamedOrderItem returns the OrderItem named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (o *Order) NamedOrderItem(name string) ([]*OrderItem, error) {
+	if o.Edges.namedOrderItem == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := o.Edges.namedOrderItem[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (o *Order) appendNamedOrderItem(name string, edges ...*OrderItem) {
+	if o.Edges.namedOrderItem == nil {
+		o.Edges.namedOrderItem = make(map[string][]*OrderItem)
+	}
+	if len(edges) == 0 {
+		o.Edges.namedOrderItem[name] = []*OrderItem{}
+	} else {
+		o.Edges.namedOrderItem[name] = append(o.Edges.namedOrderItem[name], edges...)
+	}
+}
 
 // Orders is a parsable slice of Order.
 type Orders []*Order

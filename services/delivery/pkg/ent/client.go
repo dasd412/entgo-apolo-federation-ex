@@ -12,10 +12,12 @@ import (
 	"delivery/pkg/ent/migrate"
 
 	"delivery/pkg/ent/delivery"
+	"delivery/pkg/ent/deliveryitem"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 // Client is the client that holds all ent builders.
@@ -25,6 +27,8 @@ type Client struct {
 	Schema *migrate.Schema
 	// Delivery is the client for interacting with the Delivery builders.
 	Delivery *DeliveryClient
+	// DeliveryItem is the client for interacting with the DeliveryItem builders.
+	DeliveryItem *DeliveryItemClient
 	// additional fields for node api
 	tables tables
 }
@@ -39,6 +43,7 @@ func NewClient(opts ...Option) *Client {
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Delivery = NewDeliveryClient(c.config)
+	c.DeliveryItem = NewDeliveryItemClient(c.config)
 }
 
 type (
@@ -129,9 +134,10 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:      ctx,
-		config:   cfg,
-		Delivery: NewDeliveryClient(cfg),
+		ctx:          ctx,
+		config:       cfg,
+		Delivery:     NewDeliveryClient(cfg),
+		DeliveryItem: NewDeliveryItemClient(cfg),
 	}, nil
 }
 
@@ -149,9 +155,10 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:      ctx,
-		config:   cfg,
-		Delivery: NewDeliveryClient(cfg),
+		ctx:          ctx,
+		config:       cfg,
+		Delivery:     NewDeliveryClient(cfg),
+		DeliveryItem: NewDeliveryItemClient(cfg),
 	}, nil
 }
 
@@ -181,12 +188,14 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	c.Delivery.Use(hooks...)
+	c.DeliveryItem.Use(hooks...)
 }
 
 // Intercept adds the query interceptors to all the entity clients.
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	c.Delivery.Intercept(interceptors...)
+	c.DeliveryItem.Intercept(interceptors...)
 }
 
 // Mutate implements the ent.Mutator interface.
@@ -194,6 +203,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
 	case *DeliveryMutation:
 		return c.Delivery.mutate(ctx, m)
+	case *DeliveryItemMutation:
+		return c.DeliveryItem.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
 	}
@@ -307,6 +318,22 @@ func (c *DeliveryClient) GetX(ctx context.Context, id int) *Delivery {
 	return obj
 }
 
+// QueryDeliveryItem queries the delivery_item edge of a Delivery.
+func (c *DeliveryClient) QueryDeliveryItem(d *Delivery) *DeliveryItemQuery {
+	query := (&DeliveryItemClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := d.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(delivery.Table, delivery.FieldID, id),
+			sqlgraph.To(deliveryitem.Table, deliveryitem.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, delivery.DeliveryItemTable, delivery.DeliveryItemColumn),
+		)
+		fromV = sqlgraph.Neighbors(d.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *DeliveryClient) Hooks() []Hook {
 	return c.hooks.Delivery
@@ -332,12 +359,161 @@ func (c *DeliveryClient) mutate(ctx context.Context, m *DeliveryMutation) (Value
 	}
 }
 
+// DeliveryItemClient is a client for the DeliveryItem schema.
+type DeliveryItemClient struct {
+	config
+}
+
+// NewDeliveryItemClient returns a client for the DeliveryItem from the given config.
+func NewDeliveryItemClient(c config) *DeliveryItemClient {
+	return &DeliveryItemClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `deliveryitem.Hooks(f(g(h())))`.
+func (c *DeliveryItemClient) Use(hooks ...Hook) {
+	c.hooks.DeliveryItem = append(c.hooks.DeliveryItem, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `deliveryitem.Intercept(f(g(h())))`.
+func (c *DeliveryItemClient) Intercept(interceptors ...Interceptor) {
+	c.inters.DeliveryItem = append(c.inters.DeliveryItem, interceptors...)
+}
+
+// Create returns a builder for creating a DeliveryItem entity.
+func (c *DeliveryItemClient) Create() *DeliveryItemCreate {
+	mutation := newDeliveryItemMutation(c.config, OpCreate)
+	return &DeliveryItemCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of DeliveryItem entities.
+func (c *DeliveryItemClient) CreateBulk(builders ...*DeliveryItemCreate) *DeliveryItemCreateBulk {
+	return &DeliveryItemCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *DeliveryItemClient) MapCreateBulk(slice any, setFunc func(*DeliveryItemCreate, int)) *DeliveryItemCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &DeliveryItemCreateBulk{err: fmt.Errorf("calling to DeliveryItemClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*DeliveryItemCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &DeliveryItemCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for DeliveryItem.
+func (c *DeliveryItemClient) Update() *DeliveryItemUpdate {
+	mutation := newDeliveryItemMutation(c.config, OpUpdate)
+	return &DeliveryItemUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *DeliveryItemClient) UpdateOne(di *DeliveryItem) *DeliveryItemUpdateOne {
+	mutation := newDeliveryItemMutation(c.config, OpUpdateOne, withDeliveryItem(di))
+	return &DeliveryItemUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *DeliveryItemClient) UpdateOneID(id int) *DeliveryItemUpdateOne {
+	mutation := newDeliveryItemMutation(c.config, OpUpdateOne, withDeliveryItemID(id))
+	return &DeliveryItemUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for DeliveryItem.
+func (c *DeliveryItemClient) Delete() *DeliveryItemDelete {
+	mutation := newDeliveryItemMutation(c.config, OpDelete)
+	return &DeliveryItemDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *DeliveryItemClient) DeleteOne(di *DeliveryItem) *DeliveryItemDeleteOne {
+	return c.DeleteOneID(di.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *DeliveryItemClient) DeleteOneID(id int) *DeliveryItemDeleteOne {
+	builder := c.Delete().Where(deliveryitem.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &DeliveryItemDeleteOne{builder}
+}
+
+// Query returns a query builder for DeliveryItem.
+func (c *DeliveryItemClient) Query() *DeliveryItemQuery {
+	return &DeliveryItemQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeDeliveryItem},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a DeliveryItem entity by its id.
+func (c *DeliveryItemClient) Get(ctx context.Context, id int) (*DeliveryItem, error) {
+	return c.Query().Where(deliveryitem.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *DeliveryItemClient) GetX(ctx context.Context, id int) *DeliveryItem {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryDelivery queries the delivery edge of a DeliveryItem.
+func (c *DeliveryItemClient) QueryDelivery(di *DeliveryItem) *DeliveryQuery {
+	query := (&DeliveryClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := di.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(deliveryitem.Table, deliveryitem.FieldID, id),
+			sqlgraph.To(delivery.Table, delivery.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, deliveryitem.DeliveryTable, deliveryitem.DeliveryColumn),
+		)
+		fromV = sqlgraph.Neighbors(di.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *DeliveryItemClient) Hooks() []Hook {
+	return c.hooks.DeliveryItem
+}
+
+// Interceptors returns the client interceptors.
+func (c *DeliveryItemClient) Interceptors() []Interceptor {
+	return c.inters.DeliveryItem
+}
+
+func (c *DeliveryItemClient) mutate(ctx context.Context, m *DeliveryItemMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&DeliveryItemCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&DeliveryItemUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&DeliveryItemUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&DeliveryItemDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown DeliveryItem mutation op: %q", m.Op())
+	}
+}
+
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Delivery []ent.Hook
+		Delivery, DeliveryItem []ent.Hook
 	}
 	inters struct {
-		Delivery []ent.Interceptor
+		Delivery, DeliveryItem []ent.Interceptor
 	}
 )

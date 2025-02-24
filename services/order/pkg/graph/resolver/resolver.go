@@ -13,16 +13,18 @@ import (
 // It serves as dependency injection for your app, add any dependencies you require here.
 
 type Resolver struct {
-	entClient    *ent.Client
-	orderService service.OrderService
+	entClient        *ent.Client
+	orderService     service.OrderService
+	orderItemService service.OrderItemService
 }
 
 func NewSchema(entClient *ent.Client) graphql.ExecutableSchema {
 	return gen.NewExecutableSchema(
 		gen.Config{
 			Resolvers: &Resolver{
-				entClient:    entClient,
-				orderService: service.NewOrderService(repository.NewOrderRepository()),
+				entClient:        entClient,
+				orderService:     service.NewOrderService(repository.NewOrderRepository()),
+				orderItemService: service.NewOrderItemService(repository.NewOrderItemRepository()),
 			},
 		},
 	)

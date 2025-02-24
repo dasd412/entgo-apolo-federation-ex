@@ -4,7 +4,9 @@ package ent
 
 import (
 	"context"
+	"database/sql/driver"
 	"delivery/pkg/ent/delivery"
+	"delivery/pkg/ent/deliveryitem"
 	"delivery/pkg/ent/predicate"
 	"fmt"
 	"math"
@@ -18,12 +20,14 @@ import (
 // DeliveryQuery is the builder for querying Delivery entities.
 type DeliveryQuery struct {
 	config
-	ctx        *QueryContext
-	order      []delivery.OrderOption
-	inters     []Interceptor
-	predicates []predicate.Delivery
-	modifiers  []func(*sql.Selector)
-	loadTotal  []func(context.Context, []*Delivery) error
+	ctx                   *QueryContext
+	order                 []delivery.OrderOption
+	inters                []Interceptor
+	predicates            []predicate.Delivery
+	withDeliveryItem      *DeliveryItemQuery
+	modifiers             []func(*sql.Selector)
+	loadTotal             []func(context.Context, []*Delivery) error
+	withNamedDeliveryItem map[string]*DeliveryItemQuery
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -58,6 +62,28 @@ func (dq *DeliveryQuery) Unique(unique bool) *DeliveryQuery {
 func (dq *DeliveryQuery) Order(o ...delivery.OrderOption) *DeliveryQuery {
 	dq.order = append(dq.order, o...)
 	return dq
+}
+
+// QueryDeliveryItem chains the current query on the "delivery_item" edge.
+func (dq *DeliveryQuery) QueryDeliveryItem() *DeliveryItemQuery {
+	query := (&DeliveryItemClient{config: dq.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := dq.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := dq.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(delivery.Table, delivery.FieldID, selector),
+			sqlgraph.To(deliveryitem.Table, deliveryitem.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, delivery.DeliveryItemTable, delivery.DeliveryItemColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(dq.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
 }
 
 // First returns the first Delivery entity from the query.
@@ -247,15 +273,27 @@ func (dq *DeliveryQuery) Clone() *DeliveryQuery {
 		return nil
 	}
 	return &DeliveryQuery{
-		config:     dq.config,
-		ctx:        dq.ctx.Clone(),
-		order:      append([]delivery.OrderOption{}, dq.order...),
-		inters:     append([]Interceptor{}, dq.inters...),
-		predicates: append([]predicate.Delivery{}, dq.predicates...),
+		config:           dq.config,
+		ctx:              dq.ctx.Clone(),
+		order:            append([]delivery.OrderOption{}, dq.order...),
+		inters:           append([]Interceptor{}, dq.inters...),
+		predicates:       append([]predicate.Delivery{}, dq.predicates...),
+		withDeliveryItem: dq.withDeliveryItem.Clone(),
 		// clone intermediate query.
 		sql:  dq.sql.Clone(),
 		path: dq.path,
 	}
+}
+
+// WithDeliveryItem tells the query-builder to eager-load the nodes that are connected to
+// the "delivery_item" edge. The optional arguments are used to configure the query builder of the edge.
+func (dq *DeliveryQuery) WithDeliveryItem(opts ...func(*DeliveryItemQuery)) *DeliveryQuery {
+	query := (&DeliveryItemClient{config: dq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	dq.withDeliveryItem = query
+	return dq
 }
 
 // GroupBy is used to group vertices by one or more fields/columns.
@@ -334,8 +372,11 @@ func (dq *DeliveryQuery) prepareQuery(ctx context.Context) error {
 
 func (dq *DeliveryQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Delivery, error) {
 	var (
-		nodes = []*Delivery{}
-		_spec = dq.querySpec()
+		nodes       = []*Delivery{}
+		_spec       = dq.querySpec()
+		loadedTypes = [1]bool{
+			dq.withDeliveryItem != nil,
+		}
 	)
 	_spec.ScanValues = func(columns []string) ([]any, error) {
 		return (*Delivery).scanValues(nil, columns)
@@ -343,6 +384,7 @@ func (dq *DeliveryQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Del
 	_spec.Assign = func(columns []string, values []any) error {
 		node := &Delivery{config: dq.config}
 		nodes = append(nodes, node)
+		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
 	if len(dq.modifiers) > 0 {
@@ -357,12 +399,58 @@ func (dq *DeliveryQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Del
 	if len(nodes) == 0 {
 		return nodes, nil
 	}
+	if query := dq.withDeliveryItem; query != nil {
+		if err := dq.loadDeliveryItem(ctx, query, nodes,
+			func(n *Delivery) { n.Edges.DeliveryItem = []*DeliveryItem{} },
+			func(n *Delivery, e *DeliveryItem) { n.Edges.DeliveryItem = append(n.Edges.DeliveryItem, e) }); err != nil {
+			return nil, err
+		}
+	}
+	for name, query := range dq.withNamedDeliveryItem {
+		if err := dq.loadDeliveryItem(ctx, query, nodes,
+			func(n *Delivery) { n.appendNamedDeliveryItem(name) },
+			func(n *Delivery, e *DeliveryItem) { n.appendNamedDeliveryItem(name, e) }); err != nil {
+			return nil, err
+		}
+	}
 	for i := range dq.loadTotal {
 		if err := dq.loadTotal[i](ctx, nodes); err != nil {
 			return nil, err
 		}
 	}
 	return nodes, nil
+}
+
+func (dq *DeliveryQuery) loadDeliveryItem(ctx context.Context, query *DeliveryItemQuery, nodes []*Delivery, init func(*Delivery), assign func(*Delivery, *DeliveryItem)) error {
+	fks := make([]driver.Value, 0, len(nodes))
+	nodeids := make(map[int]*Delivery)
+	for i := range nodes {
+		fks = append(fks, nodes[i].ID)
+		nodeids[nodes[i].ID] = nodes[i]
+		if init != nil {
+			init(nodes[i])
+		}
+	}
+	query.withFKs = true
+	query.Where(predicate.DeliveryItem(func(s *sql.Selector) {
+		s.Where(sql.InValues(s.C(delivery.DeliveryItemColumn), fks...))
+	}))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		fk := n.delivery_delivery_item
+		if fk == nil {
+			return fmt.Errorf(`foreign-key "delivery_delivery_item" is nil for node %v`, n.ID)
+		}
+		node, ok := nodeids[*fk]
+		if !ok {
+			return fmt.Errorf(`unexpected referenced foreign-key "delivery_delivery_item" returned %v for node %v`, *fk, n.ID)
+		}
+		assign(node, n)
+	}
+	return nil
 }
 
 func (dq *DeliveryQuery) sqlCount(ctx context.Context) (int, error) {
@@ -447,6 +535,20 @@ func (dq *DeliveryQuery) sqlQuery(ctx context.Context) *sql.Selector {
 		selector.Limit(*limit)
 	}
 	return selector
+}
+
+// WithNamedDeliveryItem tells the query-builder to eager-load the nodes that are connected to the "delivery_item"
+// edge with the given name. The optional arguments are used to configure the query builder of the edge.
+func (dq *DeliveryQuery) WithNamedDeliveryItem(name string, opts ...func(*DeliveryItemQuery)) *DeliveryQuery {
+	query := (&DeliveryItemClient{config: dq.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	if dq.withNamedDeliveryItem == nil {
+		dq.withNamedDeliveryItem = make(map[string]*DeliveryItemQuery)
+	}
+	dq.withNamedDeliveryItem[name] = query
+	return dq
 }
 
 // DeliveryGroupBy is the group-by builder for Delivery entities.

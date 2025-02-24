@@ -5,6 +5,7 @@ package ent
 import (
 	"context"
 	"delivery/pkg/ent/delivery"
+	"delivery/pkg/ent/deliveryitem"
 	"fmt"
 	"sync"
 	"sync/atomic"
@@ -27,6 +28,11 @@ var deliveryImplementors = []string{"Delivery", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
 func (*Delivery) IsNode() {}
+
+var deliveryitemImplementors = []string{"DeliveryItem", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*DeliveryItem) IsNode() {}
 
 var errNodeInvalidID = &NotFoundError{"node"}
 
@@ -91,6 +97,15 @@ func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error)
 			Where(delivery.ID(id))
 		if fc := graphql.GetFieldContext(ctx); fc != nil {
 			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, deliveryImplementors...); err != nil {
+				return nil, err
+			}
+		}
+		return query.Only(ctx)
+	case deliveryitem.Table:
+		query := c.DeliveryItem.Query().
+			Where(deliveryitem.ID(id))
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, deliveryitemImplementors...); err != nil {
 				return nil, err
 			}
 		}
@@ -172,6 +187,22 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 		query := c.Delivery.Query().
 			Where(delivery.IDIn(ids...))
 		query, err := query.CollectFields(ctx, deliveryImplementors...)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case deliveryitem.Table:
+		query := c.DeliveryItem.Query().
+			Where(deliveryitem.IDIn(ids...))
+		query, err := query.CollectFields(ctx, deliveryitemImplementors...)
 		if err != nil {
 			return nil, err
 		}

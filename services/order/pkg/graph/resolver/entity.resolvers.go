@@ -6,6 +6,7 @@ package resolver
 
 import (
 	"context"
+	"fmt"
 	"order/pkg/ent"
 	"order/pkg/graph/gen"
 	"order/pkg/graph/gen/graphqlmodel"
@@ -14,6 +15,11 @@ import (
 // FindOrderByID is the resolver for the findOrderByID field.
 func (r *entityResolver) FindOrderByID(ctx context.Context, id int) (*ent.Order, error) {
 	return r.orderService.FindOrder(ctx, r.entClient, id)
+}
+
+// FindOrderItemByID is the resolver for the findOrderItemByID field.
+func (r *entityResolver) FindOrderItemByID(ctx context.Context, id int) (*ent.OrderItem, error) {
+	panic(fmt.Errorf("not implemented: FindOrderItemByID - findOrderItemByID"))
 }
 
 // FindUserByID is the resolver for the findUserByID field.

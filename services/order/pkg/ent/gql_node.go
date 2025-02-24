@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"order/pkg/ent/order"
+	"order/pkg/ent/orderitem"
 	"sync"
 	"sync/atomic"
 
@@ -27,6 +28,11 @@ var orderImplementors = []string{"Order", "Node"}
 
 // IsNode implements the Node interface check for GQLGen.
 func (*Order) IsNode() {}
+
+var orderitemImplementors = []string{"OrderItem", "Node"}
+
+// IsNode implements the Node interface check for GQLGen.
+func (*OrderItem) IsNode() {}
 
 var errNodeInvalidID = &NotFoundError{"node"}
 
@@ -91,6 +97,15 @@ func (c *Client) noder(ctx context.Context, table string, id int) (Noder, error)
 			Where(order.ID(id))
 		if fc := graphql.GetFieldContext(ctx); fc != nil {
 			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, orderImplementors...); err != nil {
+				return nil, err
+			}
+		}
+		return query.Only(ctx)
+	case orderitem.Table:
+		query := c.OrderItem.Query().
+			Where(orderitem.ID(id))
+		if fc := graphql.GetFieldContext(ctx); fc != nil {
+			if err := query.collectField(ctx, true, graphql.GetOperationContext(ctx), fc.Field, nil, orderitemImplementors...); err != nil {
 				return nil, err
 			}
 		}
@@ -172,6 +187,22 @@ func (c *Client) noders(ctx context.Context, table string, ids []int) ([]Noder, 
 		query := c.Order.Query().
 			Where(order.IDIn(ids...))
 		query, err := query.CollectFields(ctx, orderImplementors...)
+		if err != nil {
+			return nil, err
+		}
+		nodes, err := query.All(ctx)
+		if err != nil {
+			return nil, err
+		}
+		for _, node := range nodes {
+			for _, noder := range idmap[node.ID] {
+				*noder = node
+			}
+		}
+	case orderitem.Table:
+		query := c.OrderItem.Query().
+			Where(orderitem.IDIn(ids...))
+		query, err := query.CollectFields(ctx, orderitemImplementors...)
 		if err != nil {
 			return nil, err
 		}

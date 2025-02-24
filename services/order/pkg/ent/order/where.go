@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 // ID filters vertices based on their ID field.
@@ -207,6 +208,29 @@ func CreatedAtLT(v time.Time) predicate.Order {
 // CreatedAtLTE applies the LTE predicate on the "created_at" field.
 func CreatedAtLTE(v time.Time) predicate.Order {
 	return predicate.Order(sql.FieldLTE(FieldCreatedAt, v))
+}
+
+// HasOrderItem applies the HasEdge predicate on the "order_item" edge.
+func HasOrderItem() predicate.Order {
+	return predicate.Order(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, OrderItemTable, OrderItemColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasOrderItemWith applies the HasEdge predicate on the "order_item" edge with a given conditions (other predicates).
+func HasOrderItemWith(preds ...predicate.OrderItem) predicate.Order {
+	return predicate.Order(func(s *sql.Selector) {
+		step := newOrderItemStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
 }
 
 // And groups predicates with the AND operator between them.

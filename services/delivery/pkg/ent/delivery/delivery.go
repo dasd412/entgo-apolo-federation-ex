@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 const (
@@ -26,8 +27,17 @@ const (
 	FieldTrackingNumber = "tracking_number"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
+	// EdgeDeliveryItem holds the string denoting the delivery_item edge name in mutations.
+	EdgeDeliveryItem = "delivery_item"
 	// Table holds the table name of the delivery in the database.
 	Table = "deliveries"
+	// DeliveryItemTable is the table that holds the delivery_item relation/edge.
+	DeliveryItemTable = "delivery_items"
+	// DeliveryItemInverseTable is the table name for the DeliveryItem entity.
+	// It exists in this package in order to avoid circular dependency with the "deliveryitem" package.
+	DeliveryItemInverseTable = "delivery_items"
+	// DeliveryItemColumn is the table column denoting the delivery_item relation/edge.
+	DeliveryItemColumn = "delivery_delivery_item"
 )
 
 // Columns holds all SQL columns for delivery fields.
@@ -110,6 +120,27 @@ func ByTrackingNumber(opts ...sql.OrderTermOption) OrderOption {
 // ByCreatedAt orders the results by the created_at field.
 func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCreatedAt, opts...).ToFunc()
+}
+
+// ByDeliveryItemCount orders the results by delivery_item count.
+func ByDeliveryItemCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newDeliveryItemStep(), opts...)
+	}
+}
+
+// ByDeliveryItem orders the results by delivery_item terms.
+func ByDeliveryItem(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newDeliveryItemStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+func newDeliveryItemStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(DeliveryItemInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, DeliveryItemTable, DeliveryItemColumn),
+	)
 }
 
 // MarshalGQL implements graphql.Marshaler interface.

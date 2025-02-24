@@ -9,11 +9,12 @@ import (
 
 // CreateDeliveryInput represents a mutation input for creating deliveries.
 type CreateDeliveryInput struct {
-	OrderID        int
-	UserID         int
-	Status         delivery.Status
-	TrackingNumber *string
-	CreatedAt      *time.Time
+	OrderID         int
+	UserID          int
+	Status          delivery.Status
+	TrackingNumber  *string
+	CreatedAt       *time.Time
+	DeliveryItemIDs []int
 }
 
 // Mutate applies the CreateDeliveryInput on the DeliveryMutation builder.
@@ -27,6 +28,9 @@ func (i *CreateDeliveryInput) Mutate(m *DeliveryMutation) {
 	if v := i.CreatedAt; v != nil {
 		m.SetCreatedAt(*v)
 	}
+	if v := i.DeliveryItemIDs; len(v) > 0 {
+		m.AddDeliveryItemIDs(v...)
+	}
 }
 
 // SetInput applies the change-set in the CreateDeliveryInput on the DeliveryCreate builder.
@@ -37,12 +41,15 @@ func (c *DeliveryCreate) SetInput(i CreateDeliveryInput) *DeliveryCreate {
 
 // UpdateDeliveryInput represents a mutation input for updating deliveries.
 type UpdateDeliveryInput struct {
-	OrderID             *int
-	UserID              *int
-	Status              *delivery.Status
-	ClearTrackingNumber bool
-	TrackingNumber      *string
-	CreatedAt           *time.Time
+	OrderID               *int
+	UserID                *int
+	Status                *delivery.Status
+	ClearTrackingNumber   bool
+	TrackingNumber        *string
+	CreatedAt             *time.Time
+	ClearDeliveryItem     bool
+	AddDeliveryItemIDs    []int
+	RemoveDeliveryItemIDs []int
 }
 
 // Mutate applies the UpdateDeliveryInput on the DeliveryMutation builder.
@@ -65,6 +72,15 @@ func (i *UpdateDeliveryInput) Mutate(m *DeliveryMutation) {
 	if v := i.CreatedAt; v != nil {
 		m.SetCreatedAt(*v)
 	}
+	if i.ClearDeliveryItem {
+		m.ClearDeliveryItem()
+	}
+	if v := i.AddDeliveryItemIDs; len(v) > 0 {
+		m.AddDeliveryItemIDs(v...)
+	}
+	if v := i.RemoveDeliveryItemIDs; len(v) > 0 {
+		m.RemoveDeliveryItemIDs(v...)
+	}
 }
 
 // SetInput applies the change-set in the UpdateDeliveryInput on the DeliveryUpdate builder.
@@ -75,6 +91,70 @@ func (c *DeliveryUpdate) SetInput(i UpdateDeliveryInput) *DeliveryUpdate {
 
 // SetInput applies the change-set in the UpdateDeliveryInput on the DeliveryUpdateOne builder.
 func (c *DeliveryUpdateOne) SetInput(i UpdateDeliveryInput) *DeliveryUpdateOne {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// CreateDeliveryItemInput represents a mutation input for creating deliveryitems.
+type CreateDeliveryItemInput struct {
+	ProductName string
+	Quantity    int
+	Price       float64
+	DeliveryID  *int
+}
+
+// Mutate applies the CreateDeliveryItemInput on the DeliveryItemMutation builder.
+func (i *CreateDeliveryItemInput) Mutate(m *DeliveryItemMutation) {
+	m.SetProductName(i.ProductName)
+	m.SetQuantity(i.Quantity)
+	m.SetPrice(i.Price)
+	if v := i.DeliveryID; v != nil {
+		m.SetDeliveryID(*v)
+	}
+}
+
+// SetInput applies the change-set in the CreateDeliveryItemInput on the DeliveryItemCreate builder.
+func (c *DeliveryItemCreate) SetInput(i CreateDeliveryItemInput) *DeliveryItemCreate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// UpdateDeliveryItemInput represents a mutation input for updating deliveryitems.
+type UpdateDeliveryItemInput struct {
+	ProductName   *string
+	Quantity      *int
+	Price         *float64
+	ClearDelivery bool
+	DeliveryID    *int
+}
+
+// Mutate applies the UpdateDeliveryItemInput on the DeliveryItemMutation builder.
+func (i *UpdateDeliveryItemInput) Mutate(m *DeliveryItemMutation) {
+	if v := i.ProductName; v != nil {
+		m.SetProductName(*v)
+	}
+	if v := i.Quantity; v != nil {
+		m.SetQuantity(*v)
+	}
+	if v := i.Price; v != nil {
+		m.SetPrice(*v)
+	}
+	if i.ClearDelivery {
+		m.ClearDelivery()
+	}
+	if v := i.DeliveryID; v != nil {
+		m.SetDeliveryID(*v)
+	}
+}
+
+// SetInput applies the change-set in the UpdateDeliveryItemInput on the DeliveryItemUpdate builder.
+func (c *DeliveryItemUpdate) SetInput(i UpdateDeliveryItemInput) *DeliveryItemUpdate {
+	i.Mutate(c.Mutation())
+	return c
+}
+
+// SetInput applies the change-set in the UpdateDeliveryItemInput on the DeliveryItemUpdateOne builder.
+func (c *DeliveryItemUpdateOne) SetInput(i UpdateDeliveryItemInput) *DeliveryItemUpdateOne {
 	i.Mutate(c.Mutation())
 	return c
 }

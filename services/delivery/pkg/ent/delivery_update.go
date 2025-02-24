@@ -5,6 +5,7 @@ package ent
 import (
 	"context"
 	"delivery/pkg/ent/delivery"
+	"delivery/pkg/ent/deliveryitem"
 	"delivery/pkg/ent/predicate"
 	"errors"
 	"fmt"
@@ -118,9 +119,45 @@ func (du *DeliveryUpdate) SetNillableCreatedAt(t *time.Time) *DeliveryUpdate {
 	return du
 }
 
+// AddDeliveryItemIDs adds the "delivery_item" edge to the DeliveryItem entity by IDs.
+func (du *DeliveryUpdate) AddDeliveryItemIDs(ids ...int) *DeliveryUpdate {
+	du.mutation.AddDeliveryItemIDs(ids...)
+	return du
+}
+
+// AddDeliveryItem adds the "delivery_item" edges to the DeliveryItem entity.
+func (du *DeliveryUpdate) AddDeliveryItem(d ...*DeliveryItem) *DeliveryUpdate {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return du.AddDeliveryItemIDs(ids...)
+}
+
 // Mutation returns the DeliveryMutation object of the builder.
 func (du *DeliveryUpdate) Mutation() *DeliveryMutation {
 	return du.mutation
+}
+
+// ClearDeliveryItem clears all "delivery_item" edges to the DeliveryItem entity.
+func (du *DeliveryUpdate) ClearDeliveryItem() *DeliveryUpdate {
+	du.mutation.ClearDeliveryItem()
+	return du
+}
+
+// RemoveDeliveryItemIDs removes the "delivery_item" edge to DeliveryItem entities by IDs.
+func (du *DeliveryUpdate) RemoveDeliveryItemIDs(ids ...int) *DeliveryUpdate {
+	du.mutation.RemoveDeliveryItemIDs(ids...)
+	return du
+}
+
+// RemoveDeliveryItem removes "delivery_item" edges to DeliveryItem entities.
+func (du *DeliveryUpdate) RemoveDeliveryItem(d ...*DeliveryItem) *DeliveryUpdate {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return du.RemoveDeliveryItemIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -195,6 +232,51 @@ func (du *DeliveryUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := du.mutation.CreatedAt(); ok {
 		_spec.SetField(delivery.FieldCreatedAt, field.TypeTime, value)
+	}
+	if du.mutation.DeliveryItemCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   delivery.DeliveryItemTable,
+			Columns: []string{delivery.DeliveryItemColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(deliveryitem.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := du.mutation.RemovedDeliveryItemIDs(); len(nodes) > 0 && !du.mutation.DeliveryItemCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   delivery.DeliveryItemTable,
+			Columns: []string{delivery.DeliveryItemColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(deliveryitem.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := du.mutation.DeliveryItemIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   delivery.DeliveryItemTable,
+			Columns: []string{delivery.DeliveryItemColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(deliveryitem.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, du.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -306,9 +388,45 @@ func (duo *DeliveryUpdateOne) SetNillableCreatedAt(t *time.Time) *DeliveryUpdate
 	return duo
 }
 
+// AddDeliveryItemIDs adds the "delivery_item" edge to the DeliveryItem entity by IDs.
+func (duo *DeliveryUpdateOne) AddDeliveryItemIDs(ids ...int) *DeliveryUpdateOne {
+	duo.mutation.AddDeliveryItemIDs(ids...)
+	return duo
+}
+
+// AddDeliveryItem adds the "delivery_item" edges to the DeliveryItem entity.
+func (duo *DeliveryUpdateOne) AddDeliveryItem(d ...*DeliveryItem) *DeliveryUpdateOne {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return duo.AddDeliveryItemIDs(ids...)
+}
+
 // Mutation returns the DeliveryMutation object of the builder.
 func (duo *DeliveryUpdateOne) Mutation() *DeliveryMutation {
 	return duo.mutation
+}
+
+// ClearDeliveryItem clears all "delivery_item" edges to the DeliveryItem entity.
+func (duo *DeliveryUpdateOne) ClearDeliveryItem() *DeliveryUpdateOne {
+	duo.mutation.ClearDeliveryItem()
+	return duo
+}
+
+// RemoveDeliveryItemIDs removes the "delivery_item" edge to DeliveryItem entities by IDs.
+func (duo *DeliveryUpdateOne) RemoveDeliveryItemIDs(ids ...int) *DeliveryUpdateOne {
+	duo.mutation.RemoveDeliveryItemIDs(ids...)
+	return duo
+}
+
+// RemoveDeliveryItem removes "delivery_item" edges to DeliveryItem entities.
+func (duo *DeliveryUpdateOne) RemoveDeliveryItem(d ...*DeliveryItem) *DeliveryUpdateOne {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return duo.RemoveDeliveryItemIDs(ids...)
 }
 
 // Where appends a list predicates to the DeliveryUpdate builder.
@@ -413,6 +531,51 @@ func (duo *DeliveryUpdateOne) sqlSave(ctx context.Context) (_node *Delivery, err
 	}
 	if value, ok := duo.mutation.CreatedAt(); ok {
 		_spec.SetField(delivery.FieldCreatedAt, field.TypeTime, value)
+	}
+	if duo.mutation.DeliveryItemCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   delivery.DeliveryItemTable,
+			Columns: []string{delivery.DeliveryItemColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(deliveryitem.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := duo.mutation.RemovedDeliveryItemIDs(); len(nodes) > 0 && !duo.mutation.DeliveryItemCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   delivery.DeliveryItemTable,
+			Columns: []string{delivery.DeliveryItemColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(deliveryitem.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := duo.mutation.DeliveryItemIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   delivery.DeliveryItemTable,
+			Columns: []string{delivery.DeliveryItemColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(deliveryitem.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &Delivery{config: duo.config}
 	_spec.Assign = _node.assignValues

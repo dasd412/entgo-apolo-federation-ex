@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"order/pkg/ent/order"
+	"order/pkg/ent/orderitem"
 	"time"
 
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -50,6 +51,21 @@ func (oc *OrderCreate) SetNillableCreatedAt(t *time.Time) *OrderCreate {
 		oc.SetCreatedAt(*t)
 	}
 	return oc
+}
+
+// AddOrderItemIDs adds the "order_item" edge to the OrderItem entity by IDs.
+func (oc *OrderCreate) AddOrderItemIDs(ids ...int) *OrderCreate {
+	oc.mutation.AddOrderItemIDs(ids...)
+	return oc
+}
+
+// AddOrderItem adds the "order_item" edges to the OrderItem entity.
+func (oc *OrderCreate) AddOrderItem(o ...*OrderItem) *OrderCreate {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return oc.AddOrderItemIDs(ids...)
 }
 
 // Mutation returns the OrderMutation object of the builder.
@@ -153,6 +169,22 @@ func (oc *OrderCreate) createSpec() (*Order, *sqlgraph.CreateSpec) {
 	if value, ok := oc.mutation.CreatedAt(); ok {
 		_spec.SetField(order.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
+	}
+	if nodes := oc.mutation.OrderItemIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   order.OrderItemTable,
+			Columns: []string{order.OrderItemColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(orderitem.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

@@ -26,8 +26,33 @@ type Delivery struct {
 	// TrackingNumber holds the value of the "tracking_number" field.
 	TrackingNumber string `json:"tracking_number,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
-	CreatedAt    time.Time `json:"created_at,omitempty"`
+	CreatedAt time.Time `json:"created_at,omitempty"`
+	// Edges holds the relations/edges for other nodes in the graph.
+	// The values are being populated by the DeliveryQuery when eager-loading is set.
+	Edges        DeliveryEdges `json:"edges"`
 	selectValues sql.SelectValues
+}
+
+// DeliveryEdges holds the relations/edges for other nodes in the graph.
+type DeliveryEdges struct {
+	// DeliveryItem holds the value of the delivery_item edge.
+	DeliveryItem []*DeliveryItem `json:"delivery_item,omitempty"`
+	// loadedTypes holds the information for reporting if a
+	// type was loaded (or requested) in eager-loading or not.
+	loadedTypes [1]bool
+	// totalCount holds the count of the edges above.
+	totalCount [1]map[string]int
+
+	namedDeliveryItem map[string][]*DeliveryItem
+}
+
+// DeliveryItemOrErr returns the DeliveryItem value or an error if the edge
+// was not loaded in eager-loading.
+func (e DeliveryEdges) DeliveryItemOrErr() ([]*DeliveryItem, error) {
+	if e.loadedTypes[0] {
+		return e.DeliveryItem, nil
+	}
+	return nil, &NotLoadedError{edge: "delivery_item"}
 }
 
 // scanValues returns the types for scanning values from sql.Rows.
@@ -105,6 +130,11 @@ func (d *Delivery) Value(name string) (ent.Value, error) {
 	return d.selectValues.Get(name)
 }
 
+// QueryDeliveryItem queries the "delivery_item" edge of the Delivery entity.
+func (d *Delivery) QueryDeliveryItem() *DeliveryItemQuery {
+	return NewDeliveryClient(d.config).QueryDeliveryItem(d)
+}
+
 // Update returns a builder for updating this Delivery.
 // Note that you need to call Delivery.Unwrap() before calling this method if this Delivery
 // was returned from a transaction, and the transaction was committed or rolled back.
@@ -148,6 +178,30 @@ func (d *Delivery) String() string {
 
 // IsEntity implement fedruntime.Entity
 func (d Delivery) IsEntity() {}
+
+// NamedDeliveryItem returns the DeliveryItem named value or an error if the edge was not
+// loaded in eager-loading with this name.
+func (d *Delivery) NamedDeliveryItem(name string) ([]*DeliveryItem, error) {
+	if d.Edges.namedDeliveryItem == nil {
+		return nil, &NotLoadedError{edge: name}
+	}
+	nodes, ok := d.Edges.namedDeliveryItem[name]
+	if !ok {
+		return nil, &NotLoadedError{edge: name}
+	}
+	return nodes, nil
+}
+
+func (d *Delivery) appendNamedDeliveryItem(name string, edges ...*DeliveryItem) {
+	if d.Edges.namedDeliveryItem == nil {
+		d.Edges.namedDeliveryItem = make(map[string][]*DeliveryItem)
+	}
+	if len(edges) == 0 {
+		d.Edges.namedDeliveryItem[name] = []*DeliveryItem{}
+	} else {
+		d.Edges.namedDeliveryItem[name] = append(d.Edges.namedDeliveryItem[name], edges...)
+	}
+}
 
 // Deliveries is a parsable slice of Delivery.
 type Deliveries []*Delivery

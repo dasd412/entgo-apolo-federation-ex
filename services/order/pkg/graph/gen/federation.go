@@ -172,6 +172,25 @@ func (ec *executionContext) resolveEntity(
 
 			return entity, nil
 		}
+	case "OrderItem":
+		resolverName, err := entityResolverNameForOrderItem(ctx, rep)
+		if err != nil {
+			return nil, fmt.Errorf(`finding resolver for Entity "OrderItem": %w`, err)
+		}
+		switch resolverName {
+
+		case "findOrderItemByID":
+			id0, err := ec.unmarshalNID2int(ctx, rep["id"])
+			if err != nil {
+				return nil, fmt.Errorf(`unmarshalling param 0 for findOrderItemByID(): %w`, err)
+			}
+			entity, err := ec.resolvers.Entity().FindOrderItemByID(ctx, id0)
+			if err != nil {
+				return nil, fmt.Errorf(`resolving Entity "OrderItem": %w`, err)
+			}
+
+			return entity, nil
+		}
 	case "User":
 		resolverName, err := entityResolverNameForUser(ctx, rep)
 		if err != nil {
@@ -249,6 +268,41 @@ func entityResolverNameForOrder(ctx context.Context, rep EntityRepresentation) (
 		return "findOrderByID", nil
 	}
 	return "", fmt.Errorf("%w for Order due to %v", ErrTypeNotFound,
+		errors.Join(entityResolverErrs...).Error())
+}
+
+func entityResolverNameForOrderItem(ctx context.Context, rep EntityRepresentation) (string, error) {
+	// we collect errors because a later entity resolver may work fine
+	// when an entity has multiple keys
+	entityResolverErrs := []error{}
+	for {
+		var (
+			m   EntityRepresentation
+			val any
+			ok  bool
+		)
+		_ = val
+		// if all of the KeyFields values for this resolver are null,
+		// we shouldn't use use it
+		allNull := true
+		m = rep
+		val, ok = m["id"]
+		if !ok {
+			entityResolverErrs = append(entityResolverErrs,
+				fmt.Errorf("%w due to missing Key Field \"id\" for OrderItem", ErrTypeNotFound))
+			break
+		}
+		if allNull {
+			allNull = val == nil
+		}
+		if allNull {
+			entityResolverErrs = append(entityResolverErrs,
+				fmt.Errorf("%w due to all null value KeyFields for OrderItem", ErrTypeNotFound))
+			break
+		}
+		return "findOrderItemByID", nil
+	}
+	return "", fmt.Errorf("%w for OrderItem due to %v", ErrTypeNotFound,
 		errors.Join(entityResolverErrs...).Error())
 }
 

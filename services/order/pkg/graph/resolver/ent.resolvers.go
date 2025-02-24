@@ -25,6 +25,19 @@ func (r *queryResolver) Orders(ctx context.Context, after *entgql.Cursor[int], f
 	)
 }
 
+// OrderItems is the resolver for the orderItems field.
+func (r *queryResolver) OrderItems(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, where *ent.OrderItemWhereInput) (*ent.OrderItemConnection, error) {
+	return r.orderItemService.Paginate(
+		ctx,
+		r.entClient,
+		after,
+		first,
+		before,
+		last,
+		where,
+	)
+}
+
 // Query returns gen.QueryResolver implementation.
 func (r *Resolver) Query() gen.QueryResolver { return &queryResolver{r} }
 

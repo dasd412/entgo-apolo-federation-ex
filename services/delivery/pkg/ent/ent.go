@@ -5,6 +5,7 @@ package ent
 import (
 	"context"
 	"delivery/pkg/ent/delivery"
+	"delivery/pkg/ent/deliveryitem"
 	"errors"
 	"fmt"
 	"reflect"
@@ -73,7 +74,8 @@ var (
 func checkColumn(table, column string) error {
 	initCheck.Do(func() {
 		columnCheck = sql.NewColumnCheck(map[string]func(string) bool{
-			delivery.Table: delivery.ValidColumn,
+			delivery.Table:     delivery.ValidColumn,
+			deliveryitem.Table: deliveryitem.ValidColumn,
 		})
 	})
 	return columnCheck(table, column)

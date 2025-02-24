@@ -14,6 +14,8 @@ type Tx struct {
 	config
 	// Delivery is the client for interacting with the Delivery builders.
 	Delivery *DeliveryClient
+	// DeliveryItem is the client for interacting with the DeliveryItem builders.
+	DeliveryItem *DeliveryItemClient
 
 	// lazily loaded.
 	client     *Client
@@ -146,6 +148,7 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.Delivery = NewDeliveryClient(tx.config)
+	tx.DeliveryItem = NewDeliveryItemClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.

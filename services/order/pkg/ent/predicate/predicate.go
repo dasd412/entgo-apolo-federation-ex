@@ -8,3 +8,6 @@ import (
 
 // Order is the predicate function for order builders.
 type Order func(*sql.Selector)
+
+// OrderItem is the predicate function for orderitem builders.
+type OrderItem func(*sql.Selector)

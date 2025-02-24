@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 const (
@@ -24,8 +25,17 @@ const (
 	FieldTotalPrice = "total_price"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
+	// EdgeOrderItem holds the string denoting the order_item edge name in mutations.
+	EdgeOrderItem = "order_item"
 	// Table holds the table name of the order in the database.
 	Table = "orders"
+	// OrderItemTable is the table that holds the order_item relation/edge.
+	OrderItemTable = "order_items"
+	// OrderItemInverseTable is the table name for the OrderItem entity.
+	// It exists in this package in order to avoid circular dependency with the "orderitem" package.
+	OrderItemInverseTable = "order_items"
+	// OrderItemColumn is the table column denoting the order_item relation/edge.
+	OrderItemColumn = "order_order_item"
 )
 
 // Columns holds all SQL columns for order fields.
@@ -103,6 +113,27 @@ func ByTotalPrice(opts ...sql.OrderTermOption) OrderOption {
 // ByCreatedAt orders the results by the created_at field.
 func ByCreatedAt(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldCreatedAt, opts...).ToFunc()
+}
+
+// ByOrderItemCount orders the results by order_item count.
+func ByOrderItemCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newOrderItemStep(), opts...)
+	}
+}
+
+// ByOrderItem orders the results by order_item terms.
+func ByOrderItem(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newOrderItemStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+func newOrderItemStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(OrderItemInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, OrderItemTable, OrderItemColumn),
+	)
 }
 
 // MarshalGQL implements graphql.Marshaler interface.

@@ -14,6 +14,8 @@ type Tx struct {
 	config
 	// Order is the client for interacting with the Order builders.
 	Order *OrderClient
+	// OrderItem is the client for interacting with the OrderItem builders.
+	OrderItem *OrderItemClient
 
 	// lazily loaded.
 	client     *Client
@@ -146,6 +148,7 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.Order = NewOrderClient(tx.config)
+	tx.OrderItem = NewOrderItemClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.

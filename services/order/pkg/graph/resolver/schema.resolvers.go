@@ -28,9 +28,20 @@ func (r *mutationResolver) DeleteOrder(ctx context.Context, id int) (bool, error
 	return r.orderService.DeleteOrder(ctx, entClient, id)
 }
 
+// CreateOrderItem is the resolver for the createOrderItem field.
+func (r *mutationResolver) CreateOrderItem(ctx context.Context, input ent.CreateOrderItemInput) (*ent.OrderItem, error) {
+	entClient := ent.FromContext(ctx)
+	return r.orderItemService.CreateOrderItem(ctx, entClient, input)
+}
+
 // Order is the resolver for the order field.
 func (r *queryResolver) Order(ctx context.Context, id int) (*ent.Order, error) {
 	return r.orderService.FindOrder(ctx, r.entClient, id)
+}
+
+// OrderItem is the resolver for the orderItem field.
+func (r *queryResolver) OrderItem(ctx context.Context, id int) (*ent.OrderItem, error) {
+	return r.orderItemService.FindOrderItem(ctx, r.entClient, id)
 }
 
 // Mutation returns gen.MutationResolver implementation.

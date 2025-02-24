@@ -28,9 +28,20 @@ func (r *mutationResolver) DeleteDelivery(ctx context.Context, id int) (bool, er
 	return r.deliveryService.DeleteDelivery(ctx, entClient, id)
 }
 
+// CreateDeliveryItem is the resolver for the createDeliveryItem field.
+func (r *mutationResolver) CreateDeliveryItem(ctx context.Context, input ent.CreateDeliveryItemInput) (*ent.DeliveryItem, error) {
+	entClient := ent.FromContext(ctx)
+	return r.deliveryItemService.CreateDeliveryItem(ctx, entClient, input)
+}
+
 // Delivery is the resolver for the delivery field.
 func (r *queryResolver) Delivery(ctx context.Context, id int) (*ent.Delivery, error) {
 	return r.deliveryService.FindDelivery(ctx, r.entClient, id)
+}
+
+// DeliveryItem is the resolver for the deliveryItem field.
+func (r *queryResolver) DeliveryItem(ctx context.Context, id int) (*ent.DeliveryItem, error) {
+	return r.deliveryItemService.FindDeliveryItem(ctx, r.entClient, id)
 }
 
 // Mutation returns gen.MutationResolver implementation.

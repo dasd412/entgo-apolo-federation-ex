@@ -4,6 +4,7 @@ package ent
 
 import (
 	"delivery/pkg/ent/delivery"
+	"delivery/pkg/ent/deliveryitem"
 	"delivery/pkg/ent/predicate"
 	"errors"
 	"fmt"
@@ -79,6 +80,10 @@ type DeliveryWhereInput struct {
 	CreatedAtGTE   *time.Time  `json:"createdAtGTE,omitempty"`
 	CreatedAtLT    *time.Time  `json:"createdAtLT,omitempty"`
 	CreatedAtLTE   *time.Time  `json:"createdAtLTE,omitempty"`
+
+	// "delivery_item" edge predicates.
+	HasDeliveryItem     *bool                     `json:"hasDeliveryItem,omitempty"`
+	HasDeliveryItemWith []*DeliveryItemWhereInput `json:"hasDeliveryItemWith,omitempty"`
 }
 
 // AddPredicates adds custom predicates to the where input to be used during the filtering phase.
@@ -306,6 +311,24 @@ func (i *DeliveryWhereInput) P() (predicate.Delivery, error) {
 		predicates = append(predicates, delivery.CreatedAtLTE(*i.CreatedAtLTE))
 	}
 
+	if i.HasDeliveryItem != nil {
+		p := delivery.HasDeliveryItem()
+		if !*i.HasDeliveryItem {
+			p = delivery.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasDeliveryItemWith) > 0 {
+		with := make([]predicate.DeliveryItem, 0, len(i.HasDeliveryItemWith))
+		for _, w := range i.HasDeliveryItemWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasDeliveryItemWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, delivery.HasDeliveryItemWith(with...))
+	}
 	switch len(predicates) {
 	case 0:
 		return nil, ErrEmptyDeliveryWhereInput
@@ -313,5 +336,273 @@ func (i *DeliveryWhereInput) P() (predicate.Delivery, error) {
 		return predicates[0], nil
 	default:
 		return delivery.And(predicates...), nil
+	}
+}
+
+// DeliveryItemWhereInput represents a where input for filtering DeliveryItem queries.
+type DeliveryItemWhereInput struct {
+	Predicates []predicate.DeliveryItem  `json:"-"`
+	Not        *DeliveryItemWhereInput   `json:"not,omitempty"`
+	Or         []*DeliveryItemWhereInput `json:"or,omitempty"`
+	And        []*DeliveryItemWhereInput `json:"and,omitempty"`
+
+	// "id" field predicates.
+	ID      *int  `json:"id,omitempty"`
+	IDNEQ   *int  `json:"idNEQ,omitempty"`
+	IDIn    []int `json:"idIn,omitempty"`
+	IDNotIn []int `json:"idNotIn,omitempty"`
+	IDGT    *int  `json:"idGT,omitempty"`
+	IDGTE   *int  `json:"idGTE,omitempty"`
+	IDLT    *int  `json:"idLT,omitempty"`
+	IDLTE   *int  `json:"idLTE,omitempty"`
+
+	// "productName" field predicates.
+	ProductName             *string  `json:"productname,omitempty"`
+	ProductNameNEQ          *string  `json:"productnameNEQ,omitempty"`
+	ProductNameIn           []string `json:"productnameIn,omitempty"`
+	ProductNameNotIn        []string `json:"productnameNotIn,omitempty"`
+	ProductNameGT           *string  `json:"productnameGT,omitempty"`
+	ProductNameGTE          *string  `json:"productnameGTE,omitempty"`
+	ProductNameLT           *string  `json:"productnameLT,omitempty"`
+	ProductNameLTE          *string  `json:"productnameLTE,omitempty"`
+	ProductNameContains     *string  `json:"productnameContains,omitempty"`
+	ProductNameHasPrefix    *string  `json:"productnameHasPrefix,omitempty"`
+	ProductNameHasSuffix    *string  `json:"productnameHasSuffix,omitempty"`
+	ProductNameEqualFold    *string  `json:"productnameEqualFold,omitempty"`
+	ProductNameContainsFold *string  `json:"productnameContainsFold,omitempty"`
+
+	// "quantity" field predicates.
+	Quantity      *int  `json:"quantity,omitempty"`
+	QuantityNEQ   *int  `json:"quantityNEQ,omitempty"`
+	QuantityIn    []int `json:"quantityIn,omitempty"`
+	QuantityNotIn []int `json:"quantityNotIn,omitempty"`
+	QuantityGT    *int  `json:"quantityGT,omitempty"`
+	QuantityGTE   *int  `json:"quantityGTE,omitempty"`
+	QuantityLT    *int  `json:"quantityLT,omitempty"`
+	QuantityLTE   *int  `json:"quantityLTE,omitempty"`
+
+	// "price" field predicates.
+	Price      *float64  `json:"price,omitempty"`
+	PriceNEQ   *float64  `json:"priceNEQ,omitempty"`
+	PriceIn    []float64 `json:"priceIn,omitempty"`
+	PriceNotIn []float64 `json:"priceNotIn,omitempty"`
+	PriceGT    *float64  `json:"priceGT,omitempty"`
+	PriceGTE   *float64  `json:"priceGTE,omitempty"`
+	PriceLT    *float64  `json:"priceLT,omitempty"`
+	PriceLTE   *float64  `json:"priceLTE,omitempty"`
+
+	// "delivery" edge predicates.
+	HasDelivery     *bool                 `json:"hasDelivery,omitempty"`
+	HasDeliveryWith []*DeliveryWhereInput `json:"hasDeliveryWith,omitempty"`
+}
+
+// AddPredicates adds custom predicates to the where input to be used during the filtering phase.
+func (i *DeliveryItemWhereInput) AddPredicates(predicates ...predicate.DeliveryItem) {
+	i.Predicates = append(i.Predicates, predicates...)
+}
+
+// Filter applies the DeliveryItemWhereInput filter on the DeliveryItemQuery builder.
+func (i *DeliveryItemWhereInput) Filter(q *DeliveryItemQuery) (*DeliveryItemQuery, error) {
+	if i == nil {
+		return q, nil
+	}
+	p, err := i.P()
+	if err != nil {
+		if err == ErrEmptyDeliveryItemWhereInput {
+			return q, nil
+		}
+		return nil, err
+	}
+	return q.Where(p), nil
+}
+
+// ErrEmptyDeliveryItemWhereInput is returned in case the DeliveryItemWhereInput is empty.
+var ErrEmptyDeliveryItemWhereInput = errors.New("ent: empty predicate DeliveryItemWhereInput")
+
+// P returns a predicate for filtering deliveryitems.
+// An error is returned if the input is empty or invalid.
+func (i *DeliveryItemWhereInput) P() (predicate.DeliveryItem, error) {
+	var predicates []predicate.DeliveryItem
+	if i.Not != nil {
+		p, err := i.Not.P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'not'", err)
+		}
+		predicates = append(predicates, deliveryitem.Not(p))
+	}
+	switch n := len(i.Or); {
+	case n == 1:
+		p, err := i.Or[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'or'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		or := make([]predicate.DeliveryItem, 0, n)
+		for _, w := range i.Or {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'or'", err)
+			}
+			or = append(or, p)
+		}
+		predicates = append(predicates, deliveryitem.Or(or...))
+	}
+	switch n := len(i.And); {
+	case n == 1:
+		p, err := i.And[0].P()
+		if err != nil {
+			return nil, fmt.Errorf("%w: field 'and'", err)
+		}
+		predicates = append(predicates, p)
+	case n > 1:
+		and := make([]predicate.DeliveryItem, 0, n)
+		for _, w := range i.And {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'and'", err)
+			}
+			and = append(and, p)
+		}
+		predicates = append(predicates, deliveryitem.And(and...))
+	}
+	predicates = append(predicates, i.Predicates...)
+	if i.ID != nil {
+		predicates = append(predicates, deliveryitem.IDEQ(*i.ID))
+	}
+	if i.IDNEQ != nil {
+		predicates = append(predicates, deliveryitem.IDNEQ(*i.IDNEQ))
+	}
+	if len(i.IDIn) > 0 {
+		predicates = append(predicates, deliveryitem.IDIn(i.IDIn...))
+	}
+	if len(i.IDNotIn) > 0 {
+		predicates = append(predicates, deliveryitem.IDNotIn(i.IDNotIn...))
+	}
+	if i.IDGT != nil {
+		predicates = append(predicates, deliveryitem.IDGT(*i.IDGT))
+	}
+	if i.IDGTE != nil {
+		predicates = append(predicates, deliveryitem.IDGTE(*i.IDGTE))
+	}
+	if i.IDLT != nil {
+		predicates = append(predicates, deliveryitem.IDLT(*i.IDLT))
+	}
+	if i.IDLTE != nil {
+		predicates = append(predicates, deliveryitem.IDLTE(*i.IDLTE))
+	}
+	if i.ProductName != nil {
+		predicates = append(predicates, deliveryitem.ProductNameEQ(*i.ProductName))
+	}
+	if i.ProductNameNEQ != nil {
+		predicates = append(predicates, deliveryitem.ProductNameNEQ(*i.ProductNameNEQ))
+	}
+	if len(i.ProductNameIn) > 0 {
+		predicates = append(predicates, deliveryitem.ProductNameIn(i.ProductNameIn...))
+	}
+	if len(i.ProductNameNotIn) > 0 {
+		predicates = append(predicates, deliveryitem.ProductNameNotIn(i.ProductNameNotIn...))
+	}
+	if i.ProductNameGT != nil {
+		predicates = append(predicates, deliveryitem.ProductNameGT(*i.ProductNameGT))
+	}
+	if i.ProductNameGTE != nil {
+		predicates = append(predicates, deliveryitem.ProductNameGTE(*i.ProductNameGTE))
+	}
+	if i.ProductNameLT != nil {
+		predicates = append(predicates, deliveryitem.ProductNameLT(*i.ProductNameLT))
+	}
+	if i.ProductNameLTE != nil {
+		predicates = append(predicates, deliveryitem.ProductNameLTE(*i.ProductNameLTE))
+	}
+	if i.ProductNameContains != nil {
+		predicates = append(predicates, deliveryitem.ProductNameContains(*i.ProductNameContains))
+	}
+	if i.ProductNameHasPrefix != nil {
+		predicates = append(predicates, deliveryitem.ProductNameHasPrefix(*i.ProductNameHasPrefix))
+	}
+	if i.ProductNameHasSuffix != nil {
+		predicates = append(predicates, deliveryitem.ProductNameHasSuffix(*i.ProductNameHasSuffix))
+	}
+	if i.ProductNameEqualFold != nil {
+		predicates = append(predicates, deliveryitem.ProductNameEqualFold(*i.ProductNameEqualFold))
+	}
+	if i.ProductNameContainsFold != nil {
+		predicates = append(predicates, deliveryitem.ProductNameContainsFold(*i.ProductNameContainsFold))
+	}
+	if i.Quantity != nil {
+		predicates = append(predicates, deliveryitem.QuantityEQ(*i.Quantity))
+	}
+	if i.QuantityNEQ != nil {
+		predicates = append(predicates, deliveryitem.QuantityNEQ(*i.QuantityNEQ))
+	}
+	if len(i.QuantityIn) > 0 {
+		predicates = append(predicates, deliveryitem.QuantityIn(i.QuantityIn...))
+	}
+	if len(i.QuantityNotIn) > 0 {
+		predicates = append(predicates, deliveryitem.QuantityNotIn(i.QuantityNotIn...))
+	}
+	if i.QuantityGT != nil {
+		predicates = append(predicates, deliveryitem.QuantityGT(*i.QuantityGT))
+	}
+	if i.QuantityGTE != nil {
+		predicates = append(predicates, deliveryitem.QuantityGTE(*i.QuantityGTE))
+	}
+	if i.QuantityLT != nil {
+		predicates = append(predicates, deliveryitem.QuantityLT(*i.QuantityLT))
+	}
+	if i.QuantityLTE != nil {
+		predicates = append(predicates, deliveryitem.QuantityLTE(*i.QuantityLTE))
+	}
+	if i.Price != nil {
+		predicates = append(predicates, deliveryitem.PriceEQ(*i.Price))
+	}
+	if i.PriceNEQ != nil {
+		predicates = append(predicates, deliveryitem.PriceNEQ(*i.PriceNEQ))
+	}
+	if len(i.PriceIn) > 0 {
+		predicates = append(predicates, deliveryitem.PriceIn(i.PriceIn...))
+	}
+	if len(i.PriceNotIn) > 0 {
+		predicates = append(predicates, deliveryitem.PriceNotIn(i.PriceNotIn...))
+	}
+	if i.PriceGT != nil {
+		predicates = append(predicates, deliveryitem.PriceGT(*i.PriceGT))
+	}
+	if i.PriceGTE != nil {
+		predicates = append(predicates, deliveryitem.PriceGTE(*i.PriceGTE))
+	}
+	if i.PriceLT != nil {
+		predicates = append(predicates, deliveryitem.PriceLT(*i.PriceLT))
+	}
+	if i.PriceLTE != nil {
+		predicates = append(predicates, deliveryitem.PriceLTE(*i.PriceLTE))
+	}
+
+	if i.HasDelivery != nil {
+		p := deliveryitem.HasDelivery()
+		if !*i.HasDelivery {
+			p = deliveryitem.Not(p)
+		}
+		predicates = append(predicates, p)
+	}
+	if len(i.HasDeliveryWith) > 0 {
+		with := make([]predicate.Delivery, 0, len(i.HasDeliveryWith))
+		for _, w := range i.HasDeliveryWith {
+			p, err := w.P()
+			if err != nil {
+				return nil, fmt.Errorf("%w: field 'HasDeliveryWith'", err)
+			}
+			with = append(with, p)
+		}
+		predicates = append(predicates, deliveryitem.HasDeliveryWith(with...))
+	}
+	switch len(predicates) {
+	case 0:
+		return nil, ErrEmptyDeliveryItemWhereInput
+	case 1:
+		return predicates[0], nil
+	default:
+		return deliveryitem.And(predicates...), nil
 	}
 }

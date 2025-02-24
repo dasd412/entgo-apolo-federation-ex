@@ -4,6 +4,7 @@ import (
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
 	"entgo.io/ent/schema"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"federation"
 	"time"
@@ -22,6 +23,12 @@ func (Delivery) Fields() []ent.Field {
 		field.Enum("status").Values("pending", "in_transit", "delivered"),
 		field.String("tracking_number").Optional(),
 		field.Time("created_at").Default(time.Now),
+	}
+}
+func (Delivery) Edges() []ent.Edge {
+	return []ent.Edge{
+		edge.To("delivery_item", DeliveryItem.Type).
+			Annotations(entgql.RelayConnection()), // Order -> OrderItem (1:N 관계)
 	}
 }
 

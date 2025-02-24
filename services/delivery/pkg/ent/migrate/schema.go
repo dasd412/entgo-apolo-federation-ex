@@ -23,11 +23,35 @@ var (
 		Columns:    DeliveriesColumns,
 		PrimaryKey: []*schema.Column{DeliveriesColumns[0]},
 	}
+	// DeliveryItemsColumns holds the columns for the "delivery_items" table.
+	DeliveryItemsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeInt, Increment: true},
+		{Name: "product_name", Type: field.TypeString},
+		{Name: "quantity", Type: field.TypeInt},
+		{Name: "price", Type: field.TypeFloat64},
+		{Name: "delivery_delivery_item", Type: field.TypeInt, Nullable: true},
+	}
+	// DeliveryItemsTable holds the schema information for the "delivery_items" table.
+	DeliveryItemsTable = &schema.Table{
+		Name:       "delivery_items",
+		Columns:    DeliveryItemsColumns,
+		PrimaryKey: []*schema.Column{DeliveryItemsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "delivery_items_deliveries_delivery_item",
+				Columns:    []*schema.Column{DeliveryItemsColumns[4]},
+				RefColumns: []*schema.Column{DeliveriesColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		DeliveriesTable,
+		DeliveryItemsTable,
 	}
 )
 
 func init() {
+	DeliveryItemsTable.ForeignKeys[0].RefTable = DeliveriesTable
 }

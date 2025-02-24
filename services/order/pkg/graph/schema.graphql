@@ -2,8 +2,11 @@ type Mutation {
     createOrder(input: CreateOrderInput!): Order!
     updateOrder(id: ID!, input: UpdateOrderInput!): Order!
     deleteOrder(id: ID!): Boolean!
+
+    createOrderItem(input: CreateOrderItemInput!): OrderItem!
 }
 
 extend type Query {
     order(id: ID!): Order!
+    orderItem(id: ID!): OrderItem!
 }

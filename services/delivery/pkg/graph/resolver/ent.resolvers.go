@@ -23,6 +23,18 @@ func (r *queryResolver) Deliveries(ctx context.Context, after *entgql.Cursor[int
 		where)
 }
 
+// DeliveryItems is the resolver for the deliveryItems field.
+func (r *queryResolver) DeliveryItems(ctx context.Context, after *entgql.Cursor[int], first *int, before *entgql.Cursor[int], last *int, where *ent.DeliveryItemWhereInput) (*ent.DeliveryItemConnection, error) {
+	return r.deliveryItemService.Paginate(
+		ctx,
+		r.entClient,
+		after,
+		first,
+		before,
+		last,
+		where)
+}
+
 // Query returns gen.QueryResolver implementation.
 func (r *Resolver) Query() gen.QueryResolver { return &queryResolver{r} }
 

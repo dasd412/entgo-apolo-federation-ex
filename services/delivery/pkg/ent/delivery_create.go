@@ -5,6 +5,7 @@ package ent
 import (
 	"context"
 	"delivery/pkg/ent/delivery"
+	"delivery/pkg/ent/deliveryitem"
 	"errors"
 	"fmt"
 	"time"
@@ -64,6 +65,21 @@ func (dc *DeliveryCreate) SetNillableCreatedAt(t *time.Time) *DeliveryCreate {
 		dc.SetCreatedAt(*t)
 	}
 	return dc
+}
+
+// AddDeliveryItemIDs adds the "delivery_item" edge to the DeliveryItem entity by IDs.
+func (dc *DeliveryCreate) AddDeliveryItemIDs(ids ...int) *DeliveryCreate {
+	dc.mutation.AddDeliveryItemIDs(ids...)
+	return dc
+}
+
+// AddDeliveryItem adds the "delivery_item" edges to the DeliveryItem entity.
+func (dc *DeliveryCreate) AddDeliveryItem(d ...*DeliveryItem) *DeliveryCreate {
+	ids := make([]int, len(d))
+	for i := range d {
+		ids[i] = d[i].ID
+	}
+	return dc.AddDeliveryItemIDs(ids...)
 }
 
 // Mutation returns the DeliveryMutation object of the builder.
@@ -171,6 +187,22 @@ func (dc *DeliveryCreate) createSpec() (*Delivery, *sqlgraph.CreateSpec) {
 	if value, ok := dc.mutation.CreatedAt(); ok {
 		_spec.SetField(delivery.FieldCreatedAt, field.TypeTime, value)
 		_node.CreatedAt = value
+	}
+	if nodes := dc.mutation.DeliveryItemIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   delivery.DeliveryItemTable,
+			Columns: []string{delivery.DeliveryItemColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(deliveryitem.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec
 }

@@ -5,6 +5,7 @@ package ent
 import (
 	"context"
 	"delivery/pkg/ent/delivery"
+	"delivery/pkg/ent/deliveryitem"
 	"delivery/pkg/ent/predicate"
 	"errors"
 	"fmt"
@@ -24,26 +25,30 @@ const (
 	OpUpdateOne = ent.OpUpdateOne
 
 	// Node types.
-	TypeDelivery = "Delivery"
+	TypeDelivery     = "Delivery"
+	TypeDeliveryItem = "DeliveryItem"
 )
 
 // DeliveryMutation represents an operation that mutates the Delivery nodes in the graph.
 type DeliveryMutation struct {
 	config
-	op              Op
-	typ             string
-	id              *int
-	order_id        *int
-	addorder_id     *int
-	user_id         *int
-	adduser_id      *int
-	status          *delivery.Status
-	tracking_number *string
-	created_at      *time.Time
-	clearedFields   map[string]struct{}
-	done            bool
-	oldValue        func(context.Context) (*Delivery, error)
-	predicates      []predicate.Delivery
+	op                   Op
+	typ                  string
+	id                   *int
+	order_id             *int
+	addorder_id          *int
+	user_id              *int
+	adduser_id           *int
+	status               *delivery.Status
+	tracking_number      *string
+	created_at           *time.Time
+	clearedFields        map[string]struct{}
+	delivery_item        map[int]struct{}
+	removeddelivery_item map[int]struct{}
+	cleareddelivery_item bool
+	done                 bool
+	oldValue             func(context.Context) (*Delivery, error)
+	predicates           []predicate.Delivery
 }
 
 var _ ent.Mutation = (*DeliveryMutation)(nil)
@@ -377,6 +382,60 @@ func (m *DeliveryMutation) ResetCreatedAt() {
 	m.created_at = nil
 }
 
+// AddDeliveryItemIDs adds the "delivery_item" edge to the DeliveryItem entity by ids.
+func (m *DeliveryMutation) AddDeliveryItemIDs(ids ...int) {
+	if m.delivery_item == nil {
+		m.delivery_item = make(map[int]struct{})
+	}
+	for i := range ids {
+		m.delivery_item[ids[i]] = struct{}{}
+	}
+}
+
+// ClearDeliveryItem clears the "delivery_item" edge to the DeliveryItem entity.
+func (m *DeliveryMutation) ClearDeliveryItem() {
+	m.cleareddelivery_item = true
+}
+
+// DeliveryItemCleared reports if the "delivery_item" edge to the DeliveryItem entity was cleared.
+func (m *DeliveryMutation) DeliveryItemCleared() bool {
+	return m.cleareddelivery_item
+}
+
+// RemoveDeliveryItemIDs removes the "delivery_item" edge to the DeliveryItem entity by IDs.
+func (m *DeliveryMutation) RemoveDeliveryItemIDs(ids ...int) {
+	if m.removeddelivery_item == nil {
+		m.removeddelivery_item = make(map[int]struct{})
+	}
+	for i := range ids {
+		delete(m.delivery_item, ids[i])
+		m.removeddelivery_item[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedDeliveryItem returns the removed IDs of the "delivery_item" edge to the DeliveryItem entity.
+func (m *DeliveryMutation) RemovedDeliveryItemIDs() (ids []int) {
+	for id := range m.removeddelivery_item {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// DeliveryItemIDs returns the "delivery_item" edge IDs in the mutation.
+func (m *DeliveryMutation) DeliveryItemIDs() (ids []int) {
+	for id := range m.delivery_item {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetDeliveryItem resets all changes to the "delivery_item" edge.
+func (m *DeliveryMutation) ResetDeliveryItem() {
+	m.delivery_item = nil
+	m.cleareddelivery_item = false
+	m.removeddelivery_item = nil
+}
+
 // Where appends a list predicates to the DeliveryMutation builder.
 func (m *DeliveryMutation) Where(ps ...predicate.Delivery) {
 	m.predicates = append(m.predicates, ps...)
@@ -614,48 +673,654 @@ func (m *DeliveryMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *DeliveryMutation) AddedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.delivery_item != nil {
+		edges = append(edges, delivery.EdgeDeliveryItem)
+	}
 	return edges
 }
 
 // AddedIDs returns all IDs (to other nodes) that were added for the given edge
 // name in this mutation.
 func (m *DeliveryMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case delivery.EdgeDeliveryItem:
+		ids := make([]ent.Value, 0, len(m.delivery_item))
+		for id := range m.delivery_item {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *DeliveryMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.removeddelivery_item != nil {
+		edges = append(edges, delivery.EdgeDeliveryItem)
+	}
 	return edges
 }
 
 // RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
 // the given name in this mutation.
 func (m *DeliveryMutation) RemovedIDs(name string) []ent.Value {
+	switch name {
+	case delivery.EdgeDeliveryItem:
+		ids := make([]ent.Value, 0, len(m.removeddelivery_item))
+		for id := range m.removeddelivery_item {
+			ids = append(ids, id)
+		}
+		return ids
+	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *DeliveryMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 0)
+	edges := make([]string, 0, 1)
+	if m.cleareddelivery_item {
+		edges = append(edges, delivery.EdgeDeliveryItem)
+	}
 	return edges
 }
 
 // EdgeCleared returns a boolean which indicates if the edge with the given name
 // was cleared in this mutation.
 func (m *DeliveryMutation) EdgeCleared(name string) bool {
+	switch name {
+	case delivery.EdgeDeliveryItem:
+		return m.cleareddelivery_item
+	}
 	return false
 }
 
 // ClearEdge clears the value of the edge with the given name. It returns an error
 // if that edge is not defined in the schema.
 func (m *DeliveryMutation) ClearEdge(name string) error {
+	switch name {
+	}
 	return fmt.Errorf("unknown Delivery unique edge %s", name)
 }
 
 // ResetEdge resets all changes to the edge with the given name in this mutation.
 // It returns an error if the edge is not defined in the schema.
 func (m *DeliveryMutation) ResetEdge(name string) error {
+	switch name {
+	case delivery.EdgeDeliveryItem:
+		m.ResetDeliveryItem()
+		return nil
+	}
 	return fmt.Errorf("unknown Delivery edge %s", name)
+}
+
+// DeliveryItemMutation represents an operation that mutates the DeliveryItem nodes in the graph.
+type DeliveryItemMutation struct {
+	config
+	op              Op
+	typ             string
+	id              *int
+	productName     *string
+	quantity        *int
+	addquantity     *int
+	price           *float64
+	addprice        *float64
+	clearedFields   map[string]struct{}
+	delivery        *int
+	cleareddelivery bool
+	done            bool
+	oldValue        func(context.Context) (*DeliveryItem, error)
+	predicates      []predicate.DeliveryItem
+}
+
+var _ ent.Mutation = (*DeliveryItemMutation)(nil)
+
+// deliveryitemOption allows management of the mutation configuration using functional options.
+type deliveryitemOption func(*DeliveryItemMutation)
+
+// newDeliveryItemMutation creates new mutation for the DeliveryItem entity.
+func newDeliveryItemMutation(c config, op Op, opts ...deliveryitemOption) *DeliveryItemMutation {
+	m := &DeliveryItemMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeDeliveryItem,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withDeliveryItemID sets the ID field of the mutation.
+func withDeliveryItemID(id int) deliveryitemOption {
+	return func(m *DeliveryItemMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *DeliveryItem
+		)
+		m.oldValue = func(ctx context.Context) (*DeliveryItem, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().DeliveryItem.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withDeliveryItem sets the old DeliveryItem of the mutation.
+func withDeliveryItem(node *DeliveryItem) deliveryitemOption {
+	return func(m *DeliveryItemMutation) {
+		m.oldValue = func(context.Context) (*DeliveryItem, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m DeliveryItemMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m DeliveryItemMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *DeliveryItemMutation) ID() (id int, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *DeliveryItemMutation) IDs(ctx context.Context) ([]int, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []int{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().DeliveryItem.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetProductName sets the "productName" field.
+func (m *DeliveryItemMutation) SetProductName(s string) {
+	m.productName = &s
+}
+
+// ProductName returns the value of the "productName" field in the mutation.
+func (m *DeliveryItemMutation) ProductName() (r string, exists bool) {
+	v := m.productName
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldProductName returns the old "productName" field's value of the DeliveryItem entity.
+// If the DeliveryItem object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DeliveryItemMutation) OldProductName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldProductName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldProductName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldProductName: %w", err)
+	}
+	return oldValue.ProductName, nil
+}
+
+// ResetProductName resets all changes to the "productName" field.
+func (m *DeliveryItemMutation) ResetProductName() {
+	m.productName = nil
+}
+
+// SetQuantity sets the "quantity" field.
+func (m *DeliveryItemMutation) SetQuantity(i int) {
+	m.quantity = &i
+	m.addquantity = nil
+}
+
+// Quantity returns the value of the "quantity" field in the mutation.
+func (m *DeliveryItemMutation) Quantity() (r int, exists bool) {
+	v := m.quantity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldQuantity returns the old "quantity" field's value of the DeliveryItem entity.
+// If the DeliveryItem object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DeliveryItemMutation) OldQuantity(ctx context.Context) (v int, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldQuantity is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldQuantity requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldQuantity: %w", err)
+	}
+	return oldValue.Quantity, nil
+}
+
+// AddQuantity adds i to the "quantity" field.
+func (m *DeliveryItemMutation) AddQuantity(i int) {
+	if m.addquantity != nil {
+		*m.addquantity += i
+	} else {
+		m.addquantity = &i
+	}
+}
+
+// AddedQuantity returns the value that was added to the "quantity" field in this mutation.
+func (m *DeliveryItemMutation) AddedQuantity() (r int, exists bool) {
+	v := m.addquantity
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetQuantity resets all changes to the "quantity" field.
+func (m *DeliveryItemMutation) ResetQuantity() {
+	m.quantity = nil
+	m.addquantity = nil
+}
+
+// SetPrice sets the "price" field.
+func (m *DeliveryItemMutation) SetPrice(f float64) {
+	m.price = &f
+	m.addprice = nil
+}
+
+// Price returns the value of the "price" field in the mutation.
+func (m *DeliveryItemMutation) Price() (r float64, exists bool) {
+	v := m.price
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldPrice returns the old "price" field's value of the DeliveryItem entity.
+// If the DeliveryItem object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *DeliveryItemMutation) OldPrice(ctx context.Context) (v float64, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldPrice is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldPrice requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldPrice: %w", err)
+	}
+	return oldValue.Price, nil
+}
+
+// AddPrice adds f to the "price" field.
+func (m *DeliveryItemMutation) AddPrice(f float64) {
+	if m.addprice != nil {
+		*m.addprice += f
+	} else {
+		m.addprice = &f
+	}
+}
+
+// AddedPrice returns the value that was added to the "price" field in this mutation.
+func (m *DeliveryItemMutation) AddedPrice() (r float64, exists bool) {
+	v := m.addprice
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// ResetPrice resets all changes to the "price" field.
+func (m *DeliveryItemMutation) ResetPrice() {
+	m.price = nil
+	m.addprice = nil
+}
+
+// SetDeliveryID sets the "delivery" edge to the Delivery entity by id.
+func (m *DeliveryItemMutation) SetDeliveryID(id int) {
+	m.delivery = &id
+}
+
+// ClearDelivery clears the "delivery" edge to the Delivery entity.
+func (m *DeliveryItemMutation) ClearDelivery() {
+	m.cleareddelivery = true
+}
+
+// DeliveryCleared reports if the "delivery" edge to the Delivery entity was cleared.
+func (m *DeliveryItemMutation) DeliveryCleared() bool {
+	return m.cleareddelivery
+}
+
+// DeliveryID returns the "delivery" edge ID in the mutation.
+func (m *DeliveryItemMutation) DeliveryID() (id int, exists bool) {
+	if m.delivery != nil {
+		return *m.delivery, true
+	}
+	return
+}
+
+// DeliveryIDs returns the "delivery" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// DeliveryID instead. It exists only for internal usage by the builders.
+func (m *DeliveryItemMutation) DeliveryIDs() (ids []int) {
+	if id := m.delivery; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetDelivery resets all changes to the "delivery" edge.
+func (m *DeliveryItemMutation) ResetDelivery() {
+	m.delivery = nil
+	m.cleareddelivery = false
+}
+
+// Where appends a list predicates to the DeliveryItemMutation builder.
+func (m *DeliveryItemMutation) Where(ps ...predicate.DeliveryItem) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the DeliveryItemMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *DeliveryItemMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.DeliveryItem, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *DeliveryItemMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *DeliveryItemMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (DeliveryItem).
+func (m *DeliveryItemMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *DeliveryItemMutation) Fields() []string {
+	fields := make([]string, 0, 3)
+	if m.productName != nil {
+		fields = append(fields, deliveryitem.FieldProductName)
+	}
+	if m.quantity != nil {
+		fields = append(fields, deliveryitem.FieldQuantity)
+	}
+	if m.price != nil {
+		fields = append(fields, deliveryitem.FieldPrice)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *DeliveryItemMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case deliveryitem.FieldProductName:
+		return m.ProductName()
+	case deliveryitem.FieldQuantity:
+		return m.Quantity()
+	case deliveryitem.FieldPrice:
+		return m.Price()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *DeliveryItemMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case deliveryitem.FieldProductName:
+		return m.OldProductName(ctx)
+	case deliveryitem.FieldQuantity:
+		return m.OldQuantity(ctx)
+	case deliveryitem.FieldPrice:
+		return m.OldPrice(ctx)
+	}
+	return nil, fmt.Errorf("unknown DeliveryItem field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *DeliveryItemMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case deliveryitem.FieldProductName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetProductName(v)
+		return nil
+	case deliveryitem.FieldQuantity:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetQuantity(v)
+		return nil
+	case deliveryitem.FieldPrice:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetPrice(v)
+		return nil
+	}
+	return fmt.Errorf("unknown DeliveryItem field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *DeliveryItemMutation) AddedFields() []string {
+	var fields []string
+	if m.addquantity != nil {
+		fields = append(fields, deliveryitem.FieldQuantity)
+	}
+	if m.addprice != nil {
+		fields = append(fields, deliveryitem.FieldPrice)
+	}
+	return fields
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *DeliveryItemMutation) AddedField(name string) (ent.Value, bool) {
+	switch name {
+	case deliveryitem.FieldQuantity:
+		return m.AddedQuantity()
+	case deliveryitem.FieldPrice:
+		return m.AddedPrice()
+	}
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *DeliveryItemMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	case deliveryitem.FieldQuantity:
+		v, ok := value.(int)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddQuantity(v)
+		return nil
+	case deliveryitem.FieldPrice:
+		v, ok := value.(float64)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.AddPrice(v)
+		return nil
+	}
+	return fmt.Errorf("unknown DeliveryItem numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *DeliveryItemMutation) ClearedFields() []string {
+	return nil
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *DeliveryItemMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *DeliveryItemMutation) ClearField(name string) error {
+	return fmt.Errorf("unknown DeliveryItem nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *DeliveryItemMutation) ResetField(name string) error {
+	switch name {
+	case deliveryitem.FieldProductName:
+		m.ResetProductName()
+		return nil
+	case deliveryitem.FieldQuantity:
+		m.ResetQuantity()
+		return nil
+	case deliveryitem.FieldPrice:
+		m.ResetPrice()
+		return nil
+	}
+	return fmt.Errorf("unknown DeliveryItem field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *DeliveryItemMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.delivery != nil {
+		edges = append(edges, deliveryitem.EdgeDelivery)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *DeliveryItemMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case deliveryitem.EdgeDelivery:
+		if id := m.delivery; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *DeliveryItemMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *DeliveryItemMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *DeliveryItemMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.cleareddelivery {
+		edges = append(edges, deliveryitem.EdgeDelivery)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *DeliveryItemMutation) EdgeCleared(name string) bool {
+	switch name {
+	case deliveryitem.EdgeDelivery:
+		return m.cleareddelivery
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *DeliveryItemMutation) ClearEdge(name string) error {
+	switch name {
+	case deliveryitem.EdgeDelivery:
+		m.ClearDelivery()
+		return nil
+	}
+	return fmt.Errorf("unknown DeliveryItem unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *DeliveryItemMutation) ResetEdge(name string) error {
+	switch name {
+	case deliveryitem.EdgeDelivery:
+		m.ResetDelivery()
+		return nil
+	}
+	return fmt.Errorf("unknown DeliveryItem edge %s", name)
 }

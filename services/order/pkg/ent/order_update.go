@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"order/pkg/ent/order"
+	"order/pkg/ent/orderitem"
 	"order/pkg/ent/predicate"
 	"time"
 
@@ -98,9 +99,45 @@ func (ou *OrderUpdate) SetNillableCreatedAt(t *time.Time) *OrderUpdate {
 	return ou
 }
 
+// AddOrderItemIDs adds the "order_item" edge to the OrderItem entity by IDs.
+func (ou *OrderUpdate) AddOrderItemIDs(ids ...int) *OrderUpdate {
+	ou.mutation.AddOrderItemIDs(ids...)
+	return ou
+}
+
+// AddOrderItem adds the "order_item" edges to the OrderItem entity.
+func (ou *OrderUpdate) AddOrderItem(o ...*OrderItem) *OrderUpdate {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return ou.AddOrderItemIDs(ids...)
+}
+
 // Mutation returns the OrderMutation object of the builder.
 func (ou *OrderUpdate) Mutation() *OrderMutation {
 	return ou.mutation
+}
+
+// ClearOrderItem clears all "order_item" edges to the OrderItem entity.
+func (ou *OrderUpdate) ClearOrderItem() *OrderUpdate {
+	ou.mutation.ClearOrderItem()
+	return ou
+}
+
+// RemoveOrderItemIDs removes the "order_item" edge to OrderItem entities by IDs.
+func (ou *OrderUpdate) RemoveOrderItemIDs(ids ...int) *OrderUpdate {
+	ou.mutation.RemoveOrderItemIDs(ids...)
+	return ou
+}
+
+// RemoveOrderItem removes "order_item" edges to OrderItem entities.
+func (ou *OrderUpdate) RemoveOrderItem(o ...*OrderItem) *OrderUpdate {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return ou.RemoveOrderItemIDs(ids...)
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -169,6 +206,51 @@ func (ou *OrderUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := ou.mutation.CreatedAt(); ok {
 		_spec.SetField(order.FieldCreatedAt, field.TypeTime, value)
+	}
+	if ou.mutation.OrderItemCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   order.OrderItemTable,
+			Columns: []string{order.OrderItemColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(orderitem.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ou.mutation.RemovedOrderItemIDs(); len(nodes) > 0 && !ou.mutation.OrderItemCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   order.OrderItemTable,
+			Columns: []string{order.OrderItemColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(orderitem.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ou.mutation.OrderItemIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   order.OrderItemTable,
+			Columns: []string{order.OrderItemColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(orderitem.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	if n, err = sqlgraph.UpdateNodes(ctx, ou.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
@@ -260,9 +342,45 @@ func (ouo *OrderUpdateOne) SetNillableCreatedAt(t *time.Time) *OrderUpdateOne {
 	return ouo
 }
 
+// AddOrderItemIDs adds the "order_item" edge to the OrderItem entity by IDs.
+func (ouo *OrderUpdateOne) AddOrderItemIDs(ids ...int) *OrderUpdateOne {
+	ouo.mutation.AddOrderItemIDs(ids...)
+	return ouo
+}
+
+// AddOrderItem adds the "order_item" edges to the OrderItem entity.
+func (ouo *OrderUpdateOne) AddOrderItem(o ...*OrderItem) *OrderUpdateOne {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return ouo.AddOrderItemIDs(ids...)
+}
+
 // Mutation returns the OrderMutation object of the builder.
 func (ouo *OrderUpdateOne) Mutation() *OrderMutation {
 	return ouo.mutation
+}
+
+// ClearOrderItem clears all "order_item" edges to the OrderItem entity.
+func (ouo *OrderUpdateOne) ClearOrderItem() *OrderUpdateOne {
+	ouo.mutation.ClearOrderItem()
+	return ouo
+}
+
+// RemoveOrderItemIDs removes the "order_item" edge to OrderItem entities by IDs.
+func (ouo *OrderUpdateOne) RemoveOrderItemIDs(ids ...int) *OrderUpdateOne {
+	ouo.mutation.RemoveOrderItemIDs(ids...)
+	return ouo
+}
+
+// RemoveOrderItem removes "order_item" edges to OrderItem entities.
+func (ouo *OrderUpdateOne) RemoveOrderItem(o ...*OrderItem) *OrderUpdateOne {
+	ids := make([]int, len(o))
+	for i := range o {
+		ids[i] = o[i].ID
+	}
+	return ouo.RemoveOrderItemIDs(ids...)
 }
 
 // Where appends a list predicates to the OrderUpdate builder.
@@ -361,6 +479,51 @@ func (ouo *OrderUpdateOne) sqlSave(ctx context.Context) (_node *Order, err error
 	}
 	if value, ok := ouo.mutation.CreatedAt(); ok {
 		_spec.SetField(order.FieldCreatedAt, field.TypeTime, value)
+	}
+	if ouo.mutation.OrderItemCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   order.OrderItemTable,
+			Columns: []string{order.OrderItemColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(orderitem.FieldID, field.TypeInt),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ouo.mutation.RemovedOrderItemIDs(); len(nodes) > 0 && !ouo.mutation.OrderItemCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   order.OrderItemTable,
+			Columns: []string{order.OrderItemColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(orderitem.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := ouo.mutation.OrderItemIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.O2M,
+			Inverse: false,
+			Table:   order.OrderItemTable,
+			Columns: []string{order.OrderItemColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(orderitem.FieldID, field.TypeInt),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
 	_node = &Order{config: ouo.config}
 	_spec.Assign = _node.assignValues

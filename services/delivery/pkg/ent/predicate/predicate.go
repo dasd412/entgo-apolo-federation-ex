@@ -8,3 +8,6 @@ import (
 
 // Delivery is the predicate function for delivery builders.
 type Delivery func(*sql.Selector)
+
+// DeliveryItem is the predicate function for deliveryitem builders.
+type DeliveryItem func(*sql.Selector)

@@ -4,6 +4,7 @@ import (
 	"entgo.io/contrib/entgql"
 	"entgo.io/ent"
 	"entgo.io/ent/schema"
+	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"federation"
 	"time"
@@ -23,6 +24,14 @@ func (Order) Fields() []ent.Field {
 		field.Time("created_at").Default(time.Now),
 	}
 }
+
+func (Order) Edges() []ent.Edge {
+	return []ent.Edge{
+		edge.To("order_item", OrderItem.Type).
+			Annotations(entgql.RelayConnection()), // Order -> OrderItem (1:N 관계)
+	}
+}
+
 func (Order) Annotations() []schema.Annotation {
 	return []schema.Annotation{
 		entgql.RelayConnection(),

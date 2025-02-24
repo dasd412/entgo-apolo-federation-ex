@@ -12,10 +12,12 @@ import (
 	"order/pkg/ent/migrate"
 
 	"order/pkg/ent/order"
+	"order/pkg/ent/orderitem"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
 	"entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/sqlgraph"
 )
 
 // Client is the client that holds all ent builders.
@@ -25,6 +27,8 @@ type Client struct {
 	Schema *migrate.Schema
 	// Order is the client for interacting with the Order builders.
 	Order *OrderClient
+	// OrderItem is the client for interacting with the OrderItem builders.
+	OrderItem *OrderItemClient
 	// additional fields for node api
 	tables tables
 }
@@ -39,6 +43,7 @@ func NewClient(opts ...Option) *Client {
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Order = NewOrderClient(c.config)
+	c.OrderItem = NewOrderItemClient(c.config)
 }
 
 type (
@@ -129,9 +134,10 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:    ctx,
-		config: cfg,
-		Order:  NewOrderClient(cfg),
+		ctx:       ctx,
+		config:    cfg,
+		Order:     NewOrderClient(cfg),
+		OrderItem: NewOrderItemClient(cfg),
 	}, nil
 }
 
@@ -149,9 +155,10 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:    ctx,
-		config: cfg,
-		Order:  NewOrderClient(cfg),
+		ctx:       ctx,
+		config:    cfg,
+		Order:     NewOrderClient(cfg),
+		OrderItem: NewOrderItemClient(cfg),
 	}, nil
 }
 
@@ -181,12 +188,14 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	c.Order.Use(hooks...)
+	c.OrderItem.Use(hooks...)
 }
 
 // Intercept adds the query interceptors to all the entity clients.
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	c.Order.Intercept(interceptors...)
+	c.OrderItem.Intercept(interceptors...)
 }
 
 // Mutate implements the ent.Mutator interface.
@@ -194,6 +203,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
 	case *OrderMutation:
 		return c.Order.mutate(ctx, m)
+	case *OrderItemMutation:
+		return c.OrderItem.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("ent: unknown mutation type %T", m)
 	}
@@ -307,6 +318,22 @@ func (c *OrderClient) GetX(ctx context.Context, id int) *Order {
 	return obj
 }
 
+// QueryOrderItem queries the order_item edge of a Order.
+func (c *OrderClient) QueryOrderItem(o *Order) *OrderItemQuery {
+	query := (&OrderItemClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := o.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(order.Table, order.FieldID, id),
+			sqlgraph.To(orderitem.Table, orderitem.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, order.OrderItemTable, order.OrderItemColumn),
+		)
+		fromV = sqlgraph.Neighbors(o.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *OrderClient) Hooks() []Hook {
 	return c.hooks.Order
@@ -332,12 +359,161 @@ func (c *OrderClient) mutate(ctx context.Context, m *OrderMutation) (Value, erro
 	}
 }
 
+// OrderItemClient is a client for the OrderItem schema.
+type OrderItemClient struct {
+	config
+}
+
+// NewOrderItemClient returns a client for the OrderItem from the given config.
+func NewOrderItemClient(c config) *OrderItemClient {
+	return &OrderItemClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `orderitem.Hooks(f(g(h())))`.
+func (c *OrderItemClient) Use(hooks ...Hook) {
+	c.hooks.OrderItem = append(c.hooks.OrderItem, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `orderitem.Intercept(f(g(h())))`.
+func (c *OrderItemClient) Intercept(interceptors ...Interceptor) {
+	c.inters.OrderItem = append(c.inters.OrderItem, interceptors...)
+}
+
+// Create returns a builder for creating a OrderItem entity.
+func (c *OrderItemClient) Create() *OrderItemCreate {
+	mutation := newOrderItemMutation(c.config, OpCreate)
+	return &OrderItemCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of OrderItem entities.
+func (c *OrderItemClient) CreateBulk(builders ...*OrderItemCreate) *OrderItemCreateBulk {
+	return &OrderItemCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *OrderItemClient) MapCreateBulk(slice any, setFunc func(*OrderItemCreate, int)) *OrderItemCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &OrderItemCreateBulk{err: fmt.Errorf("calling to OrderItemClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*OrderItemCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &OrderItemCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for OrderItem.
+func (c *OrderItemClient) Update() *OrderItemUpdate {
+	mutation := newOrderItemMutation(c.config, OpUpdate)
+	return &OrderItemUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *OrderItemClient) UpdateOne(oi *OrderItem) *OrderItemUpdateOne {
+	mutation := newOrderItemMutation(c.config, OpUpdateOne, withOrderItem(oi))
+	return &OrderItemUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *OrderItemClient) UpdateOneID(id int) *OrderItemUpdateOne {
+	mutation := newOrderItemMutation(c.config, OpUpdateOne, withOrderItemID(id))
+	return &OrderItemUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for OrderItem.
+func (c *OrderItemClient) Delete() *OrderItemDelete {
+	mutation := newOrderItemMutation(c.config, OpDelete)
+	return &OrderItemDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *OrderItemClient) DeleteOne(oi *OrderItem) *OrderItemDeleteOne {
+	return c.DeleteOneID(oi.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *OrderItemClient) DeleteOneID(id int) *OrderItemDeleteOne {
+	builder := c.Delete().Where(orderitem.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &OrderItemDeleteOne{builder}
+}
+
+// Query returns a query builder for OrderItem.
+func (c *OrderItemClient) Query() *OrderItemQuery {
+	return &OrderItemQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeOrderItem},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a OrderItem entity by its id.
+func (c *OrderItemClient) Get(ctx context.Context, id int) (*OrderItem, error) {
+	return c.Query().Where(orderitem.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *OrderItemClient) GetX(ctx context.Context, id int) *OrderItem {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryOrder queries the order edge of a OrderItem.
+func (c *OrderItemClient) QueryOrder(oi *OrderItem) *OrderQuery {
+	query := (&OrderClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := oi.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(orderitem.Table, orderitem.FieldID, id),
+			sqlgraph.To(order.Table, order.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, orderitem.OrderTable, orderitem.OrderColumn),
+		)
+		fromV = sqlgraph.Neighbors(oi.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *OrderItemClient) Hooks() []Hook {
+	return c.hooks.OrderItem
+}
+
+// Interceptors returns the client interceptors.
+func (c *OrderItemClient) Interceptors() []Interceptor {
+	return c.inters.OrderItem
+}
+
+func (c *OrderItemClient) mutate(ctx context.Context, m *OrderItemMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&OrderItemCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&OrderItemUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&OrderItemUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&OrderItemDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown OrderItem mutation op: %q", m.Op())
+	}
+}
+
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Order []ent.Hook
+		Order, OrderItem []ent.Hook
 	}
 	inters struct {
-		Order []ent.Interceptor
+		Order, OrderItem []ent.Interceptor
 	}
 )

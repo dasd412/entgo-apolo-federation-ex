@@ -5,6 +5,7 @@ package ent
 import (
 	"context"
 	"delivery/pkg/ent/delivery"
+	"delivery/pkg/ent/deliveryitem"
 	"errors"
 	"fmt"
 
@@ -378,5 +379,290 @@ func (d *Delivery) ToEdge(order *DeliveryOrder) *DeliveryEdge {
 	return &DeliveryEdge{
 		Node:   d,
 		Cursor: order.Field.toCursor(d),
+	}
+}
+
+// DeliveryItemEdge is the edge representation of DeliveryItem.
+type DeliveryItemEdge struct {
+	Node   *DeliveryItem `json:"node"`
+	Cursor Cursor        `json:"cursor"`
+}
+
+// DeliveryItemConnection is the connection containing edges to DeliveryItem.
+type DeliveryItemConnection struct {
+	Edges      []*DeliveryItemEdge `json:"edges"`
+	PageInfo   PageInfo            `json:"pageInfo"`
+	TotalCount int                 `json:"totalCount"`
+}
+
+func (c *DeliveryItemConnection) build(nodes []*DeliveryItem, pager *deliveryitemPager, after *Cursor, first *int, before *Cursor, last *int) {
+	c.PageInfo.HasNextPage = before != nil
+	c.PageInfo.HasPreviousPage = after != nil
+	if first != nil && *first+1 == len(nodes) {
+		c.PageInfo.HasNextPage = true
+		nodes = nodes[:len(nodes)-1]
+	} else if last != nil && *last+1 == len(nodes) {
+		c.PageInfo.HasPreviousPage = true
+		nodes = nodes[:len(nodes)-1]
+	}
+	var nodeAt func(int) *DeliveryItem
+	if last != nil {
+		n := len(nodes) - 1
+		nodeAt = func(i int) *DeliveryItem {
+			return nodes[n-i]
+		}
+	} else {
+		nodeAt = func(i int) *DeliveryItem {
+			return nodes[i]
+		}
+	}
+	c.Edges = make([]*DeliveryItemEdge, len(nodes))
+	for i := range nodes {
+		node := nodeAt(i)
+		c.Edges[i] = &DeliveryItemEdge{
+			Node:   node,
+			Cursor: pager.toCursor(node),
+		}
+	}
+	if l := len(c.Edges); l > 0 {
+		c.PageInfo.StartCursor = &c.Edges[0].Cursor
+		c.PageInfo.EndCursor = &c.Edges[l-1].Cursor
+	}
+	if c.TotalCount == 0 {
+		c.TotalCount = len(nodes)
+	}
+}
+
+// DeliveryItemPaginateOption enables pagination customization.
+type DeliveryItemPaginateOption func(*deliveryitemPager) error
+
+// WithDeliveryItemOrder configures pagination ordering.
+func WithDeliveryItemOrder(order []*DeliveryItemOrder) DeliveryItemPaginateOption {
+	return func(pager *deliveryitemPager) error {
+		for _, o := range order {
+			if err := o.Direction.Validate(); err != nil {
+				return err
+			}
+		}
+		pager.order = append(pager.order, order...)
+		return nil
+	}
+}
+
+// WithDeliveryItemFilter configures pagination filter.
+func WithDeliveryItemFilter(filter func(*DeliveryItemQuery) (*DeliveryItemQuery, error)) DeliveryItemPaginateOption {
+	return func(pager *deliveryitemPager) error {
+		if filter == nil {
+			return errors.New("DeliveryItemQuery filter cannot be nil")
+		}
+		pager.filter = filter
+		return nil
+	}
+}
+
+type deliveryitemPager struct {
+	reverse bool
+	order   []*DeliveryItemOrder
+	filter  func(*DeliveryItemQuery) (*DeliveryItemQuery, error)
+}
+
+func newDeliveryItemPager(opts []DeliveryItemPaginateOption, reverse bool) (*deliveryitemPager, error) {
+	pager := &deliveryitemPager{reverse: reverse}
+	for _, opt := range opts {
+		if err := opt(pager); err != nil {
+			return nil, err
+		}
+	}
+	for i, o := range pager.order {
+		if i > 0 && o.Field == pager.order[i-1].Field {
+			return nil, fmt.Errorf("duplicate order direction %q", o.Direction)
+		}
+	}
+	return pager, nil
+}
+
+func (p *deliveryitemPager) applyFilter(query *DeliveryItemQuery) (*DeliveryItemQuery, error) {
+	if p.filter != nil {
+		return p.filter(query)
+	}
+	return query, nil
+}
+
+func (p *deliveryitemPager) toCursor(di *DeliveryItem) Cursor {
+	cs_ := make([]any, 0, len(p.order))
+	for _, o_ := range p.order {
+		cs_ = append(cs_, o_.Field.toCursor(di).Value)
+	}
+	return Cursor{ID: di.ID, Value: cs_}
+}
+
+func (p *deliveryitemPager) applyCursors(query *DeliveryItemQuery, after, before *Cursor) (*DeliveryItemQuery, error) {
+	idDirection := entgql.OrderDirectionAsc
+	if p.reverse {
+		idDirection = entgql.OrderDirectionDesc
+	}
+	fields, directions := make([]string, 0, len(p.order)), make([]OrderDirection, 0, len(p.order))
+	for _, o := range p.order {
+		fields = append(fields, o.Field.column)
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		directions = append(directions, direction)
+	}
+	predicates, err := entgql.MultiCursorsPredicate(after, before, &entgql.MultiCursorsOptions{
+		FieldID:     DefaultDeliveryItemOrder.Field.column,
+		DirectionID: idDirection,
+		Fields:      fields,
+		Directions:  directions,
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, predicate := range predicates {
+		query = query.Where(predicate)
+	}
+	return query, nil
+}
+
+func (p *deliveryitemPager) applyOrder(query *DeliveryItemQuery) *DeliveryItemQuery {
+	var defaultOrdered bool
+	for _, o := range p.order {
+		direction := o.Direction
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(o.Field.toTerm(direction.OrderTermOption()))
+		if o.Field.column == DefaultDeliveryItemOrder.Field.column {
+			defaultOrdered = true
+		}
+		if len(query.ctx.Fields) > 0 {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	if !defaultOrdered {
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		query = query.Order(DefaultDeliveryItemOrder.Field.toTerm(direction.OrderTermOption()))
+	}
+	return query
+}
+
+func (p *deliveryitemPager) orderExpr(query *DeliveryItemQuery) sql.Querier {
+	if len(query.ctx.Fields) > 0 {
+		for _, o := range p.order {
+			query.ctx.AppendFieldOnce(o.Field.column)
+		}
+	}
+	return sql.ExprFunc(func(b *sql.Builder) {
+		for _, o := range p.order {
+			direction := o.Direction
+			if p.reverse {
+				direction = direction.Reverse()
+			}
+			b.Ident(o.Field.column).Pad().WriteString(string(direction))
+			b.Comma()
+		}
+		direction := entgql.OrderDirectionAsc
+		if p.reverse {
+			direction = direction.Reverse()
+		}
+		b.Ident(DefaultDeliveryItemOrder.Field.column).Pad().WriteString(string(direction))
+	})
+}
+
+// Paginate executes the query and returns a relay based cursor connection to DeliveryItem.
+func (di *DeliveryItemQuery) Paginate(
+	ctx context.Context, after *Cursor, first *int,
+	before *Cursor, last *int, opts ...DeliveryItemPaginateOption,
+) (*DeliveryItemConnection, error) {
+	if err := validateFirstLast(first, last); err != nil {
+		return nil, err
+	}
+	pager, err := newDeliveryItemPager(opts, last != nil)
+	if err != nil {
+		return nil, err
+	}
+	if di, err = pager.applyFilter(di); err != nil {
+		return nil, err
+	}
+	conn := &DeliveryItemConnection{Edges: []*DeliveryItemEdge{}}
+	ignoredEdges := !hasCollectedField(ctx, edgesField)
+	if hasCollectedField(ctx, totalCountField) || hasCollectedField(ctx, pageInfoField) {
+		hasPagination := after != nil || first != nil || before != nil || last != nil
+		if hasPagination || ignoredEdges {
+			c := di.Clone()
+			c.ctx.Fields = nil
+			if conn.TotalCount, err = c.Count(ctx); err != nil {
+				return nil, err
+			}
+			conn.PageInfo.HasNextPage = first != nil && conn.TotalCount > 0
+			conn.PageInfo.HasPreviousPage = last != nil && conn.TotalCount > 0
+		}
+	}
+	if ignoredEdges || (first != nil && *first == 0) || (last != nil && *last == 0) {
+		return conn, nil
+	}
+	if di, err = pager.applyCursors(di, after, before); err != nil {
+		return nil, err
+	}
+	limit := paginateLimit(first, last)
+	if limit != 0 {
+		di.Limit(limit)
+	}
+	if field := collectedField(ctx, edgesField, nodeField); field != nil {
+		if err := di.collectField(ctx, limit == 1, graphql.GetOperationContext(ctx), *field, []string{edgesField, nodeField}); err != nil {
+			return nil, err
+		}
+	}
+	di = pager.applyOrder(di)
+	nodes, err := di.All(ctx)
+	if err != nil {
+		return nil, err
+	}
+	conn.build(nodes, pager, after, first, before, last)
+	return conn, nil
+}
+
+// DeliveryItemOrderField defines the ordering field of DeliveryItem.
+type DeliveryItemOrderField struct {
+	// Value extracts the ordering value from the given DeliveryItem.
+	Value    func(*DeliveryItem) (ent.Value, error)
+	column   string // field or computed.
+	toTerm   func(...sql.OrderTermOption) deliveryitem.OrderOption
+	toCursor func(*DeliveryItem) Cursor
+}
+
+// DeliveryItemOrder defines the ordering of DeliveryItem.
+type DeliveryItemOrder struct {
+	Direction OrderDirection          `json:"direction"`
+	Field     *DeliveryItemOrderField `json:"field"`
+}
+
+// DefaultDeliveryItemOrder is the default ordering of DeliveryItem.
+var DefaultDeliveryItemOrder = &DeliveryItemOrder{
+	Direction: entgql.OrderDirectionAsc,
+	Field: &DeliveryItemOrderField{
+		Value: func(di *DeliveryItem) (ent.Value, error) {
+			return di.ID, nil
+		},
+		column: deliveryitem.FieldID,
+		toTerm: deliveryitem.ByID,
+		toCursor: func(di *DeliveryItem) Cursor {
+			return Cursor{ID: di.ID}
+		},
+	},
+}
+
+// ToEdge converts DeliveryItem into DeliveryItemEdge.
+func (di *DeliveryItem) ToEdge(order *DeliveryItemOrder) *DeliveryItemEdge {
+	if order == nil {
+		order = DefaultDeliveryItemOrder
+	}
+	return &DeliveryItemEdge{
+		Node:   di,
+		Cursor: order.Field.toCursor(di),
 	}
 }

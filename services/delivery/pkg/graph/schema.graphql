@@ -2,8 +2,11 @@ type Mutation {
     createDelivery(input: CreateDeliveryInput!): Delivery!
     updateDelivery(id: ID!, input: UpdateDeliveryInput!): Delivery!
     deleteDelivery(id: ID!): Boolean!
+
+    createDeliveryItem(input: CreateDeliveryItemInput!): DeliveryItem!
 }
 
 extend type Query {
     delivery(id: ID!): Delivery!
+    deliveryItem(id: ID!): DeliveryItem!
 }
