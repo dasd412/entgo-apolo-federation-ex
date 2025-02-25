@@ -24,32 +24,24 @@ async function startServer() {
     // ✅ [NEW] JSON 요청을 처리할 수 있도록 미들웨어 추가
     app.use(express.json());
 
-    // ✅ [NEW] 기본 경로(/) 처리: GraphQL Playground로 안내
-    app.get("/", (req, res) => {
-        res.send(`
-      <h1>🚀 Apollo Gateway</h1>
-      <p>Go to <a href="/graphql">GraphQL Playground</a></p>
-    `);
-    });
-
     // 🔹 Apollo Server 생성
     const server = new ApolloServer({ gateway });
 
     await server.start();
-    app.use("/graphql", expressMiddleware(server));
+    app.use("/", expressMiddleware(server));
 
     // 🔹 WebSocket Server 설정 (Subscription 지원)
     const wsServer = new WebSocketServer({
         server: httpServer, // ✅ HTTP 서버와 연결
-        path: "/graphql",
+        path: "/",
     });
 
     useServer({ schema: gateway.schema }, wsServer);
 
     // 🔹 HTTP 서버 실행
     httpServer.listen(4000, () => {
-        console.log(`🚀 Apollo Gateway running at http://localhost:4000/graphql`);
-        console.log(`🚀 WebSocket Server running at ws://localhost:4000/graphql`);
+        console.log(`🚀 Apollo Gateway running at http://localhost:4000/`);
+        console.log(`🚀 WebSocket Server running at ws://localhost:4000/`);
     });
 }
 
