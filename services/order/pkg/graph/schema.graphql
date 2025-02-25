@@ -10,3 +10,12 @@ extend type Query {
     order(id: ID!): Order!
     orderItem(id: ID!): OrderItem!
 }
+
+type ExampleTime {
+    unixTime: Int!
+    timeStamp: String!
+}
+
+type Subscription{
+    currentTime:ExampleTime!
+}

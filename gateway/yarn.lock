@@ -302,6 +302,14 @@
     "@graphql-tools/utils" "^9.2.1"
     tslib "^2.4.0"
 
+"@graphql-tools/merge@^9.0.20":
+  version "9.0.20"
+  resolved "https://registry.npmjs.org/@graphql-tools/merge/-/merge-9.0.20.tgz"
+  integrity sha512-bJ+rudkkhYaiWzRV3vCyu6CD6bJsrBV1e+L4MOor7p5wSBQBAs8IAW05IktQq1RH1KPvyZ62z77P0/VsapnSKA==
+  dependencies:
+    "@graphql-tools/utils" "^10.8.2"
+    tslib "^2.4.0"
+
 "@graphql-tools/merge@8.3.1":
   version "8.3.1"
   resolved "https://registry.npmjs.org/@graphql-tools/merge/-/merge-8.3.1.tgz"
@@ -318,6 +326,15 @@
     "@graphql-tools/schema" "^9.0.18"
     "@graphql-tools/utils" "^9.2.1"
     fast-json-stable-stringify "^2.1.0"
+    tslib "^2.4.0"
+
+"@graphql-tools/schema@^10.0.19":
+  version "10.0.19"
+  resolved "https://registry.npmjs.org/@graphql-tools/schema/-/schema-10.0.19.tgz"
+  integrity sha512-8osBrTWG9c0ya7sse2fpKlDqi0EAto8Qq9A/PlSZ5J5SY0EE1W9lUcTIVaHc79cOKdh++z4ZHoukzZXrxC8UIg==
+  dependencies:
+    "@graphql-tools/merge" "^9.0.20"
+    "@graphql-tools/utils" "^10.8.2"
     tslib "^2.4.0"
 
 "@graphql-tools/schema@^8.0.0":
@@ -349,6 +366,16 @@
     "@graphql-tools/utils" "^9.2.1"
     tslib "^2.4.0"
     value-or-promise "^1.0.12"
+
+"@graphql-tools/utils@^10.8.2":
+  version "10.8.2"
+  resolved "https://registry.npmjs.org/@graphql-tools/utils/-/utils-10.8.2.tgz"
+  integrity sha512-JjWpf9Dj2LXFccAB7CON6jUcXduJlE5XcJfLmKTWBk46Ei2dhDntVAmvIa97YPdLanrgFN5SRt3hSAe3qo/FYg==
+  dependencies:
+    "@graphql-typed-document-node/core" "^3.1.1"
+    cross-inspect "1.0.1"
+    dset "^3.1.4"
+    tslib "^2.4.0"
 
 "@graphql-tools/utils@^9.2.1":
   version "9.2.1"
@@ -945,6 +972,13 @@ cors@^2.8.5:
     object-assign "^4"
     vary "^1"
 
+cross-inspect@1.0.1:
+  version "1.0.1"
+  resolved "https://registry.npmjs.org/cross-inspect/-/cross-inspect-1.0.1.tgz"
+  integrity sha512-Pcw1JTvZLSJH83iiGWt6fRcT+BjZlCDRVwYLbUcHzv/CRpB7r0MlSrGbIyQvVSNyGnbt7G4AXuyCiDR3POvZ1A==
+  dependencies:
+    tslib "^2.4.0"
+
 cross-spawn@^7.0.0:
   version "7.0.6"
   resolved "https://registry.npmjs.org/cross-spawn/-/cross-spawn-7.0.6.tgz"
@@ -1036,6 +1070,11 @@ destroy@1.2.0:
   version "1.2.0"
   resolved "https://registry.npmjs.org/destroy/-/destroy-1.2.0.tgz"
   integrity sha512-2sJGJTaXIIaR1w4iJSNoN0hnMY7Gpc/n8D4qSCJw8QqFWXf7cuAgnEHxBpweaVcPevC2l3KpjYCx3NypQQgaJg==
+
+dset@^3.1.4:
+  version "3.1.4"
+  resolved "https://registry.npmjs.org/dset/-/dset-3.1.4.tgz"
+  integrity sha512-2QF/g9/zTaPDc3BjNcVTGoBbXBgYfMTTceLaYcFJ/W9kggFUkhxD/hMEeuLKbugyef9SqAx8cpgwlIP/jinUTA==
 
 dunder-proto@^1.0.1:
   version "1.0.1"
@@ -1302,7 +1341,12 @@ graphql-tag@^2.11.0:
   dependencies:
     tslib "^2.1.0"
 
-"graphql@^0.8.0 || ^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0 || ^17.0.0", "graphql@^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0", "graphql@^14.0.0 || ^15.0.0 || ^16.0.0 || ^17.0.0", "graphql@^14.2.1 || ^15.0.0 || ^16.0.0", "graphql@^15.3.0 || ^16.0.0", graphql@^16.10.0, graphql@^16.5.0, graphql@^16.6.0, "graphql@14.x || 15.x || 16.x":
+graphql-ws@^5.5.5:
+  version "5.5.5"
+  resolved "https://registry.npmjs.org/graphql-ws/-/graphql-ws-5.5.5.tgz"
+  integrity sha512-hvyIS71vs4Tu/yUYHPvGXsTgo0t3arU820+lT5VjZS2go0ewp2LqyCgxEN56CzOG7Iys52eRhHBiD1gGRdiQtw==
+
+"graphql@^0.8.0 || ^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0 || ^17.0.0", "graphql@^0.9.0 || ^0.10.0 || ^0.11.0 || ^0.12.0 || ^0.13.0 || ^14.0.0 || ^15.0.0 || ^16.0.0", "graphql@^14.0.0 || ^15.0.0 || ^16.0.0 || ^17.0.0", "graphql@^14.2.1 || ^15.0.0 || ^16.0.0", "graphql@^15.3.0 || ^16.0.0", graphql@^16.10.0, graphql@^16.5.0, graphql@^16.6.0, "graphql@>=0.11 <=16", "graphql@14.x || 15.x || 16.x":
   version "16.10.0"
   resolved "https://registry.npmjs.org/graphql/-/graphql-16.10.0.tgz"
   integrity sha512-AjqGKbDGUFRKIRCP9tCKiIGHyriz2oHEbPIbEtcSLSs4YjReZOIPQQWek4+6hjw62H9QShXHyaGivGiYVLeYFQ==
@@ -2363,6 +2407,11 @@ wrap-ansi@^8.1.0:
     ansi-styles "^6.1.0"
     string-width "^5.0.1"
     strip-ansi "^7.0.1"
+
+ws@^8.18.1:
+  version "8.18.1"
+  resolved "https://registry.npmjs.org/ws/-/ws-8.18.1.tgz"
+  integrity sha512-RKW2aJZMXeMxVpnZ6bck+RswznaxmzdULiBr6KY7XkTnW8uvt0iT9H5DkHUChXrc+uurzwa0rVI16n/Xzjdz1w==
 
 xss@^1.0.8:
   version "1.0.15"

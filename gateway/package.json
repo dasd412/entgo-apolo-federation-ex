@@ -2,7 +2,10 @@
   "dependencies": {
     "@apollo/gateway": "^2.10.0",
     "@apollo/server": "^4.11.3",
+    "@graphql-tools/schema": "^10.0.19",
     "apollo-server": "^3.13.0",
-    "graphql": "^16.10.0"
+    "graphql": "^16.10.0",
+    "graphql-ws": "^5.5.5",
+    "ws": "^8.18.1"
   }
 }
