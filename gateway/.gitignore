@@ -1,0 +1,21 @@
+# node_modules 무시
+node_modules/
+
+# 환경 변수 파일 무시
+.env
+.env.local
+
+# 빌드 결과물 무시
+dist/
+build/
+
+# OS 관련 파일 무시
+.DS_Store
+Thumbs.db
+
+# TypeScript 캐시 및 IDE 설정 파일 무시
+*.log
+*.lock
+*.tsbuildinfo
+.vscode/
+.idea/
