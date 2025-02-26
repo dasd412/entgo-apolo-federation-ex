@@ -10,11 +10,12 @@
     "start": "npm run compile && node ./dist/index.js"
   },
   "dependencies": {
-    "@apollo/server": "^4.1.0",
+    "@apollo/gateway": "^2.10.0",
+    "@apollo/server": "^4.11.3",
     "@graphql-tools/schema": "^9.0.13",
     "cors": "^2.8.5",
     "express": "^4.17.1",
-    "graphql": "^16.6.0",
+    "graphql": "^16.10.0",
     "graphql-subscriptions": "^2.0.0",
     "graphql-ws": "^5.5.5",
     "typescript": "^4.7.4",
