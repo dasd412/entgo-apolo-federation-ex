@@ -1,6 +1,7 @@
 package main
 
 import (
+	"auth"
 	"context"
 	"entgo.io/contrib/entgql"
 	"errorwrapper"
@@ -59,7 +60,7 @@ func main() {
 	corsWrapper := cors.AllowAll().Handler
 
 	http.Handle("/", playground.Handler("GraphQL playground", "/graphql"))
-	http.Handle("/graphql", corsWrapper(server))
+	http.Handle("/graphql", corsWrapper(auth.PassportMiddleware(server)))
 
 	log.Printf("Connect to http://localhost:%s/ for GraphQL playground", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))

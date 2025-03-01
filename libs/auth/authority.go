@@ -3,8 +3,7 @@ package auth
 type Role int
 
 const (
-	UNKNOWN = 1 << iota
-	Admin
+	Admin = 1 << iota
 	User
 )
 
@@ -12,10 +11,8 @@ func ConvertRole(role string) Role {
 	switch role {
 	case "admin":
 		return Admin
-	case "user":
-		return User
 	default:
-		return UNKNOWN
+		return User
 	}
 }
 
