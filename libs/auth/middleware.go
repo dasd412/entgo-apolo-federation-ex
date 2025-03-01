@@ -19,6 +19,11 @@ func PassportMiddleware(next http.Handler) http.Handler {
 		userID := r.Header.Get("user-id")
 		role := r.Header.Get("role")
 
+		if userID == "" || role == "" {
+			next.ServeHTTP(w, r)
+			return
+		}
+
 		ctx := context.WithValue(
 			r.Context(),
 			passportKey,
@@ -27,12 +32,11 @@ func PassportMiddleware(next http.Handler) http.Handler {
 				UserAuthority: NewAuthority(ConvertRole(role)),
 			})
 
-		// 다음 핸들러 실행
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
-func PassportFromContext(ctx context.Context) Authority {
-	v, _ := ctx.Value(passportKey).(Authority)
+func PassportFromContext(ctx context.Context) Passport {
+	v, _ := ctx.Value(passportKey).(Passport)
 	return v
 }

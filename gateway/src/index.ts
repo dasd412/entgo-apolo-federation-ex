@@ -30,7 +30,7 @@ class AuthenticatedDataSource extends RemoteGraphQLDataSource {
 
 // 🔹 **Apollo Gateway 설정**
 const gateway = new ApolloGateway({
-    supergraphSdl: new IntrospectAndCompose({
+    supergraphSdl: new IntrospectAndCompose({//todo production에선 권장하지 않음.
         subgraphs: [
             { name: "user", url: "http://localhost:8081/graphql" },
             { name: "order", url: "http://localhost:8082/graphql" },
