@@ -6,11 +6,8 @@ package resolver
 
 import (
 	"context"
-	"fmt"
 	"order/pkg/ent"
 	"order/pkg/graph/gen"
-	"order/pkg/graph/gen/graphqlmodel"
-	"time"
 )
 
 // CreateOrder is the resolver for the createOrder field.
@@ -47,8 +44,19 @@ func (r *queryResolver) OrderItem(ctx context.Context, id int) (*ent.OrderItem, 
 	return r.orderItemService.FindOrderItem(ctx, r.entClient, id)
 }
 
-// CurrentTime is the resolver for the currentTime field.
-func (r *subscriptionResolver) CurrentTime(ctx context.Context) (<-chan *graphqlmodel.ExampleTime, error) {
+// Mutation returns gen.MutationResolver implementation.
+func (r *Resolver) Mutation() gen.MutationResolver { return &mutationResolver{r} }
+
+type mutationResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//    it when you're done.
+//  - You have helper methods in this file. Move them out to keep these resolver files clean.
+/*
+	func (r *subscriptionResolver) CurrentTime(ctx context.Context) (<-chan *graphqlmodel.ExampleTime, error) {
 	ch := make(chan *graphqlmodel.ExampleTime)
 
 	// You can (and probably should) handle your channels in a central place outside of `schema.resolvers.go`.
@@ -87,12 +95,6 @@ func (r *subscriptionResolver) CurrentTime(ctx context.Context) (<-chan *graphql
 	// We return the channel and no error.
 	return ch, nil
 }
-
-// Mutation returns gen.MutationResolver implementation.
-func (r *Resolver) Mutation() gen.MutationResolver { return &mutationResolver{r} }
-
-// Subscription returns gen.SubscriptionResolver implementation.
 func (r *Resolver) Subscription() gen.SubscriptionResolver { return &subscriptionResolver{r} }
-
-type mutationResolver struct{ *Resolver }
 type subscriptionResolver struct{ *Resolver }
+*/

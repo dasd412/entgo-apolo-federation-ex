@@ -9,7 +9,7 @@ import (
 	"user/pkg/ent/user"
 )
 
-type JwtTokenPair struct {
+type TokenPair struct {
 	AccessToken  string `json:"access_token"`
 	RefreshToken string `json:"refresh_token"`
 }
@@ -18,7 +18,7 @@ type JwtTokenPair struct {
 var secretKey = []byte("your_secret_key")
 var refreshSecretKey = []byte("your_refresh_secret_key")
 
-func GenerateTokenPair(userId int, role user.Role) (*JwtTokenPair, error) {
+func GenerateTokenPair(userId int, role user.Role) (*TokenPair, error) {
 	accessClaims := jwt.MapClaims{
 		"sub":  strconv.Itoa(userId),                 // 사용자 Id(subject)
 		"exp":  time.Now().Add(time.Hour * 1).Unix(), // 만료시간 (1시간)
@@ -49,7 +49,7 @@ func GenerateTokenPair(userId int, role user.Role) (*JwtTokenPair, error) {
 		return nil, err
 	}
 
-	return &JwtTokenPair{
+	return &TokenPair{
 		AccessToken:  accessTokenString,
 		RefreshToken: refreshTokenString,
 	}, nil

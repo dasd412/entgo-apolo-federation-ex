@@ -5,10 +5,7 @@ import (
 	"entgo.io/contrib/entgql"
 	"errorwrapper"
 	"github.com/99designs/gqlgen/graphql/handler"
-	"github.com/99designs/gqlgen/graphql/handler/extension"
-	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
-	"github.com/gorilla/websocket"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/rs/cors"
 	"github.com/vektah/gqlparser/v2/gqlerror"
@@ -16,7 +13,6 @@ import (
 	"net/http"
 	"order/pkg/ent"
 	"order/pkg/graph/resolver"
-	"slices"
 	"strconv"
 	"time"
 )
@@ -54,29 +50,7 @@ func main() {
 		log.Fatalf("Invalid port number: %v", err)
 	}
 
-	server := handler.New(resolver.NewSchema(client))
-	server.AddTransport(transport.Websocket{
-		KeepAlivePingInterval: 10 * time.Second,
-
-		Upgrader: websocket.Upgrader{
-			Subprotocols: []string{"graphql-transport-ws"},
-			CheckOrigin: func(r *http.Request) bool {
-				// Allow exact match on host.
-				origin := r.Header.Get("Origin")
-				host := r.Header.Get("Host")
-				if origin == "" || origin == host {
-					return true
-				}
-
-				// Match on allow-listed origins.
-				return slices.Contains([]string{"http://localhost:8082", "https://ui.mysite.com"}, origin)
-			},
-		},
-	}) // Add WebSocket first. Here there is no config, see below for examples.
-	server.AddTransport(transport.Options{}) // If you are using the playground, it's smart to add Options and GET.
-	server.AddTransport(transport.GET{})     // ...
-	server.AddTransport(transport.POST{})    // ... Make sure this is after the WebSocket transport!
-	server.Use(extension.Introspection{})
+	server := handler.NewDefaultServer(resolver.NewSchema(client))
 	server.Use(entgql.Transactioner{TxOpener: client})
 	server.SetErrorPresenter(func(ctx context.Context, err error) *gqlerror.Error {
 		return errorwrapper.WrapError(ctx, err)

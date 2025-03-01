@@ -13,7 +13,6 @@ import (
 	"net/http"
 	"strconv"
 	"time"
-	"user/internal/middleware/auth"
 	"user/pkg/ent"
 	"user/pkg/graph/resolver"
 )
@@ -51,7 +50,7 @@ func main() {
 		log.Fatalf("Invalid port number: %v", err)
 	}
 
-	server := handler.New(resolver.NewSchema(client))
+	server := handler.NewDefaultServer(resolver.NewSchema(client))
 	server.Use(entgql.Transactioner{TxOpener: client})
 	server.SetErrorPresenter(func(ctx context.Context, err error) *gqlerror.Error {
 		return errorwrapper.WrapError(ctx, err)
@@ -60,7 +59,7 @@ func main() {
 	corsWrapper := cors.AllowAll().Handler
 
 	http.Handle("/", playground.Handler("GraphQL playground", "/graphql"))
-	http.Handle("/graphql", corsWrapper(auth.ApiOperationNameMiddleware(auth.JWTMiddleware(server))))
+	http.Handle("/graphql", corsWrapper(server))
 
 	log.Printf("Connect to http://localhost:%s/ for GraphQL playground", port)
 	log.Fatal(http.ListenAndServe(":"+port, nil))

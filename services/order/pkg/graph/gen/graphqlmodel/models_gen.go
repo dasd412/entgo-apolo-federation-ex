@@ -6,14 +6,6 @@ import (
 	"order/pkg/ent"
 )
 
-type ExampleTime struct {
-	UnixTime  int    `json:"unixTime"`
-	TimeStamp string `json:"timeStamp"`
-}
-
-type Subscription struct {
-}
-
 type User struct {
 	ID     int          `json:"id"`
 	Orders []*ent.Order `json:"orders,omitempty"`

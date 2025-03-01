@@ -8,7 +8,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
 	"strconv"
-	"user/internal/middleware/auth"
+	"user/internal/auth"
 	"user/internal/repository"
 	"user/pkg/ent"
 	"user/pkg/ent/user"
