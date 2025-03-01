@@ -1,9 +1,17 @@
 type Mutation {
-    createUser(input: CreateUserInput!): User! 
+    signup(input: CreateUserInput!): AuthPayload!
+    login(email: String!, password: String!): AuthPayload!
+    refreshToken(refreshToken: String!): AuthPayload!
     updateUser(id: ID!, input: UpdateUserInput!): User! 
     deleteUser(id: ID!): Boolean!
 }
 
 extend type Query {
     user(id: ID!): User!
+}
+
+type AuthPayload{
+    user:User!
+    accessToken: String!
+    refreshToken: String!
 }

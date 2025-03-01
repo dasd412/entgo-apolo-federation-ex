@@ -8,12 +8,24 @@ import (
 	"context"
 	"user/pkg/ent"
 	"user/pkg/graph/gen"
+	"user/pkg/graph/gen/graphqlmodel"
 )
 
-// CreateUser is the resolver for the createUser field.
-func (r *mutationResolver) CreateUser(ctx context.Context, input ent.CreateUserInput) (*ent.User, error) {
+// Signup is the resolver for the signup field.
+func (r *mutationResolver) Signup(ctx context.Context, input ent.CreateUserInput) (*graphqlmodel.AuthPayload, error) {
 	entClient := ent.FromContext(ctx)
-	return r.userService.CreateUser(ctx, entClient, input)
+	return r.userService.Signup(ctx, entClient, input)
+}
+
+// Login is the resolver for the login field.
+func (r *mutationResolver) Login(ctx context.Context, email string, password string) (*graphqlmodel.AuthPayload, error) {
+	entClient := ent.FromContext(ctx)
+	return r.userService.Login(ctx, entClient, email, password)
+}
+
+// RefreshToken is the resolver for the refreshToken field.
+func (r *mutationResolver) RefreshToken(ctx context.Context, refreshToken string) (*graphqlmodel.AuthPayload, error) {
+	return r.userService.RefreshToken(ctx, r.entClient, refreshToken)
 }
 
 // UpdateUser is the resolver for the updateUser field.
@@ -37,3 +49,16 @@ func (r *queryResolver) User(ctx context.Context, id int) (*ent.User, error) {
 func (r *Resolver) Mutation() gen.MutationResolver { return &mutationResolver{r} }
 
 type mutationResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//  - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//    it when you're done.
+//  - You have helper methods in this file. Move them out to keep these resolver files clean.
+/*
+	func (r *mutationResolver) CreateUser(ctx context.Context, input ent.CreateUserInput) (*ent.User, error) {
+	entClient := ent.FromContext(ctx)
+	return r.userService.CreateUser(ctx, entClient, input)
+}
+*/

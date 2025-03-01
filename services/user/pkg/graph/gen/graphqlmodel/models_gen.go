@@ -6,6 +6,12 @@ import (
 	"user/pkg/ent"
 )
 
+type AuthPayload struct {
+	User         *ent.User `json:"user"`
+	AccessToken  string    `json:"accessToken"`
+	RefreshToken string    `json:"refreshToken"`
+}
+
 type Delivery struct {
 	UserID int       `json:"userID"`
 	User   *ent.User `json:"user"`
