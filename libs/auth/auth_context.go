@@ -43,20 +43,3 @@ func UserAuthorityFromContext(ctx context.Context) Authority {
 	v, _ := ctx.Value(userAuthorityKey).(Authority)
 	return v
 }
-
-type apiOperationNameContextKey string
-
-const apiOperationNameKey apiOperationNameContextKey = "apiOperationName"
-
-func WithApiOperationName(ctx context.Context, name string) context.Context {
-	return context.WithValue(ctx, apiOperationNameKey, name)
-}
-
-func ApiOperationNameFromContext(ctx context.Context) (string, error) {
-	operationName, ok := ctx.Value(apiOperationNameKey).(string)
-	if !ok {
-		return "", errors.New("operationName not found in context")
-	}
-
-	return operationName, nil
-}
