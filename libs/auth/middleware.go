@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 	"net/http"
+	"strconv"
 )
 
 type userPassportContextKey string
@@ -10,17 +11,23 @@ type userPassportContextKey string
 const passportKey userPassportContextKey = "userPassportContextKey"
 
 type Passport struct {
-	UserId        string
+	UserId        int
 	UserAuthority UserAuthority
 }
 
 func PassportMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		userID := r.Header.Get("user-id")
+		userIdStr := r.Header.Get("user-id")
 		role := r.Header.Get("role")
 
-		if userID == "" || role == "" {
+		if userIdStr == "" || role == "" {
 			next.ServeHTTP(w, r)
+			return
+		}
+
+		userId, err := strconv.Atoi(userIdStr)
+		if err != nil {
+			http.Error(w, "Invalid user id", http.StatusBadRequest)
 			return
 		}
 
@@ -28,7 +35,7 @@ func PassportMiddleware(next http.Handler) http.Handler {
 			r.Context(),
 			passportKey,
 			Passport{
-				UserId:        userID,
+				UserId:        userId,
 				UserAuthority: NewAuthority(ConvertRole(role)),
 			})
 

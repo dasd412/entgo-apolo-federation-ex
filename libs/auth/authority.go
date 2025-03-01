@@ -37,7 +37,3 @@ func (u UserAuthority) IsAdmin() bool {
 func (u UserAuthority) IsUser() bool {
 	return u.role == User
 }
-
-func (u UserAuthority) HasRole(role Role) bool {
-	return u.role&role != 0
-}
