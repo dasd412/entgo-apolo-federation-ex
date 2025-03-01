@@ -5,18 +5,15 @@ type Role int
 const (
 	UNKNOWN = 1 << iota
 	Admin
-	Author
-	Guest
+	User
 )
 
 func ConvertRole(role string) Role {
 	switch role {
 	case "admin":
 		return Admin
-	case "author":
-		return Author
 	case "user":
-		return Guest
+		return User
 	default:
 		return UNKNOWN
 	}
@@ -24,8 +21,7 @@ func ConvertRole(role string) Role {
 
 type Authority interface {
 	IsAdmin() bool
-	IsAuthor() bool
-	IsGuest() bool
+	IsUser() bool
 	HasRole(role Role) bool
 }
 
@@ -41,12 +37,8 @@ func (u UserAuthority) IsAdmin() bool {
 	return u.role == Admin
 }
 
-func (u UserAuthority) IsAuthor() bool {
-	return u.role == Author
-}
-
-func (u UserAuthority) IsGuest() bool {
-	return u.role == Guest
+func (u UserAuthority) IsUser() bool {
+	return u.role == User
 }
 
 func (u UserAuthority) HasRole(role Role) bool {

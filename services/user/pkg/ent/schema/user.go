@@ -28,7 +28,7 @@ func (User) Fields() []ent.Field {
 			Default(time.Now).
 			Immutable(),
 		field.Enum("role").
-			Values("admin", "author", "guest").
+			Values("admin", "user").
 			Comment("인가 권한"),
 	}
 }
